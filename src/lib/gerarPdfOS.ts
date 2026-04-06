@@ -75,7 +75,8 @@ export async function gerarPdfOS(
   // --- Veículo ---
   doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.text('Veículo', 14, y); y += 5;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
-  const veicInfo = `${veiculo?.marca ?? ''} ${veiculo?.modelo ?? ''} | Placa: ${veiculo?.placa ?? '-'}`;
+  const veicParts = [veiculo?.marca, veiculo?.modelo].filter(Boolean).join(' ') || 'Veículo';
+  const veicInfo = `${veicParts} | Placa: ${veiculo?.placa || '-'}`;
   doc.text(veicInfo, 14, y);
   if (veiculo?.quilometragem) doc.text(`KM: ${veiculo.quilometragem}`, 150, y);
   y += 7;
@@ -190,7 +191,8 @@ export async function gerarPdfOrcamento(
   // Veículo
   doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.text('Veículo', 14, y); y += 5;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
-  doc.text(`${veiculo?.marca ?? ''} ${veiculo?.modelo ?? ''} | Placa: ${veiculo?.placa ?? '-'}`, 14, y); y += 7;
+  const veicParts2 = [veiculo?.marca, veiculo?.modelo].filter(Boolean).join(' ') || 'Veículo';
+  doc.text(`${veicParts2} | Placa: ${veiculo?.placa || '-'}`, 14, y); y += 7;
   doc.line(14, y, pw - 14, y); y += 6;
 
   // Itens
@@ -284,7 +286,8 @@ export async function gerarPdfNF(nf: NotaFiscalCompleta) {
   doc.text(`Nome: ${nf.destinatario_nome ?? '-'}`, ml + 2, y + 7);
   doc.text(`CPF/CNPJ: ${nf.destinatario_cpf_cnpj ?? '-'}`, 110, y + 7);
   if (nf.veiculo) {
-    doc.text(`Veículo: ${nf.veiculo.marca} ${nf.veiculo.modelo} | Placa: ${nf.veiculo.placa}${nf.veiculo.ano ? ` | Ano: ${nf.veiculo.ano}` : ''}`, ml + 2, y + 12);
+    const nfVeicParts = [nf.veiculo.marca, nf.veiculo.modelo].filter(Boolean).join(' ') || 'Veículo';
+    doc.text(`Veículo: ${nfVeicParts} | Placa: ${nf.veiculo.placa || '-'}${nf.veiculo.ano ? ` | Ano: ${nf.veiculo.ano}` : ''}`, ml + 2, y + 12);
     if (nf.os_numero) doc.text(`OS: #${nf.os_numero}`, ml + 2, y + 17);
     y += 24;
   } else {
