@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { MoneyDisplay } from '@/components/shared/MoneyDisplay';
 import { AlertTriangle } from 'lucide-react';
-import { CATEGORIAS_PECAS } from '@/lib/constants';
+import { useCategoriasPecas } from '@/hooks/useCategoriasPecas';
 import type { Peca } from '@/types/database';
 
 interface Props {
@@ -10,6 +10,7 @@ interface Props {
 }
 
 export function PecaListMobile({ pecas, onVer }: Props) {
+  const { getLabel } = useCategoriasPecas();
   return (
     <div className="space-y-3">
       {pecas.map((p) => {
@@ -24,7 +25,7 @@ export function PecaListMobile({ pecas, onVer }: Props) {
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-foreground truncate">{p.nome}</p>
                 {p.codigo && <p className="text-xs font-mono text-muted-foreground mt-0.5">{p.codigo}</p>}
-                <Badge variant="secondary" className="bg-accent-light text-accent text-[10px] mt-1">{CATEGORIAS_PECAS[p.categoria]}</Badge>
+                <Badge variant="secondary" className="bg-accent-light text-accent text-[10px] mt-1">{getLabel(p.categoria)}</Badge>
               </div>
               <div className="text-right shrink-0 ml-3">
                 <MoneyDisplay valor={p.preco_venda} className="text-sm" />
