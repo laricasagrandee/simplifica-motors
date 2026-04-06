@@ -10,10 +10,11 @@ import { EntradaEstoqueForm } from '@/components/pecas/EntradaEstoqueForm';
 import { EtiquetaSelecao } from '@/components/pecas/EtiquetaSelecao';
 import { QRCodeScanner } from '@/components/pecas/QRCodeScanner';
 import { InventarioDialog } from '@/components/pecas/InventarioDialog';
+import { GerenciarCategoriasDialog } from '@/components/pecas/GerenciarCategoriasDialog';
 import { ClientePagination } from '@/components/clientes/ClientePagination';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, PackagePlus, QrCode, ScanLine, ClipboardList } from 'lucide-react';
+import { Plus, PackagePlus, QrCode, ScanLine, ClipboardList, Tags } from 'lucide-react';
 import { useListarPecas, useCriarPeca, useEditarPeca, useResumoPecas } from '@/hooks/usePecas';
 import { useEntradaEstoque } from '@/hooks/useEstoque';
 import { useGerarEtiquetasLote } from '@/hooks/useEtiquetas';
@@ -32,6 +33,7 @@ export default function PecasPage() {
   const [etiquetasOpen, setEtiquetasOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [inventarioOpen, setInventarioOpen] = useState(false);
+  const [categoriasOpen, setCategoriasOpen] = useState(false);
   const cat = categoria === 'all' ? '' : categoria;
   const { data, isLoading } = useListarPecas(busca, cat as CategoriaPeca | '', apenasAlerta, pagina);
   const { data: resumo } = useResumoPecas();
@@ -83,6 +85,9 @@ export default function PecasPage() {
     <AppLayout>
       <PageHeader titulo="Peças & Produtos" subtitulo="Catálogo e controle de estoque">
         <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={() => setCategoriasOpen(true)} className="gap-2">
+            <Tags className="h-4 w-4" /> Categorias
+          </Button>
           <Button variant="outline" onClick={handleInventario} disabled={criarInv.isPending} className="gap-2">
             <ClipboardList className="h-4 w-4" /> Inventário
           </Button>
@@ -126,6 +131,7 @@ export default function PecasPage() {
         </DialogContent>
       </Dialog>
       {invAtual && <InventarioDialog open={inventarioOpen} onClose={() => setInventarioOpen(false)} inventario={invAtual} />}
+      <GerenciarCategoriasDialog open={categoriasOpen} onClose={() => setCategoriasOpen(false)} />
     </AppLayout>
   );
 }

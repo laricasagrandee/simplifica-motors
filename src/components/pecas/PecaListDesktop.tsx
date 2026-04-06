@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { MoneyDisplay } from '@/components/shared/MoneyDisplay';
 import { AlertTriangle } from 'lucide-react';
-import { CATEGORIAS_PECAS } from '@/lib/constants';
+import { useCategoriasPecas } from '@/hooks/useCategoriasPecas';
 import type { Peca } from '@/types/database';
 
 interface Props {
@@ -11,6 +11,7 @@ interface Props {
 }
 
 export function PecaListDesktop({ pecas, onEditar, onVer }: Props) {
+  const { getLabel } = useCategoriasPecas();
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
       <table className="w-full">
@@ -34,7 +35,7 @@ export function PecaListDesktop({ pecas, onEditar, onVer }: Props) {
                 <td className="px-4 py-3 text-sm font-semibold text-foreground">{p.nome}</td>
                 <td className="px-4 py-3 text-sm text-muted-foreground">{p.marca || '—'}</td>
                 <td className="px-4 py-3">
-                  <Badge variant="secondary" className="bg-accent-light text-accent text-xs">{CATEGORIAS_PECAS[p.categoria]}</Badge>
+                  <Badge variant="secondary" className="bg-accent-light text-accent text-xs">{getLabel(p.categoria)}</Badge>
                 </td>
                 <td className="px-4 py-3 text-center">
                   <span className={`font-mono text-sm ${emAlerta ? 'text-danger font-bold' : 'text-foreground'}`}>
