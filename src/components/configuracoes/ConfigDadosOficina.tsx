@@ -13,7 +13,7 @@ export function ConfigDadosOficina({ config, loading, onSalvar, onUploadLogo }: 
   const [form, setForm] = useState<Record<string, string>>({});
   if (loading || !config) return <Skeleton className="h-60 w-full" />;
 
-  const v = (k: string) => form[k] ?? ((config as Record<string, unknown>)[k] as string || '');
+  const v = (k: string) => form[k] ?? ((config as unknown as Record<string, unknown>)[k] as string || '');
   const set = (k: string, val: string) => setForm(p => ({ ...p, [k]: val }));
 
   const campos: { key: keyof Configuracao | string; label: string }[] = [
