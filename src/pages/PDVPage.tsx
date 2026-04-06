@@ -38,6 +38,19 @@ export default function PDVPage() {
     });
   }, []);
 
+  const adicionarAvulso = useCallback((item: { nome: string; valor: number }) => {
+    const avulsoId = `avulso-${Date.now()}`;
+    setItens((prev) => [...prev, {
+      peca_id: avulsoId,
+      nome: item.nome,
+      codigo: null,
+      valor_unitario: item.valor,
+      quantidade: 1,
+      estoque_max: 9999,
+    }]);
+    toast.success('Item avulso adicionado!');
+  }, []);
+
   const alterarQtd = useCallback((pecaId: string, qtd: number) => {
     setItens((prev) => prev.map((i) => i.peca_id === pecaId ? { ...i, quantidade: qtd } : i));
   }, []);
@@ -47,10 +60,14 @@ export default function PDVPage() {
   }, []);
 
   const confirmarPagamento = async (clienteId: string | null, forma: FormaPagamento, parcelas: number) => {
+    const itensReais = itens.filter(i => !i.peca_id.startsWith('avulso-'));
+    const itensAvulsos = itens.filter(i => i.peca_id.startsWith('avulso-'));
+    
     await criarVenda.mutateAsync({
       cliente_id: clienteId,
-      itens: itens.map((i) => ({ peca_id: i.peca_id, quantidade: i.quantidade, valor_unitario: i.valor_unitario })),
+      itens: itensReais.map((i) => ({ peca_id: i.peca_id, quantidade: i.quantidade, valor_unitario: i.valor_unitario })),
       desconto: descontoReais, forma_pagamento: forma, parcelas, valor_total: total,
+      observacao: itensAvulsos.length > 0 ? `Itens avulsos: ${itensAvulsos.map(i => `${i.nome} R$${i.valor_unitario}`).join(', ')}` : undefined,
     });
     toast.success('Venda registrada com sucesso!');
     setItens([]); setDesconto(0); setPagamentoOpen(false);
@@ -66,7 +83,7 @@ export default function PDVPage() {
             {!caixaAberto && (
               <CaixaInlineOpener onAberto={() => refetch()} />
             )}
-            <PDVBuscaProduto onAdicionar={adicionar} />
+            <PDVBuscaProduto onAdicionar={adicionar} onAdicionarAvulso={adicionarAvulso} />
           </div>
         }
         historicoPanel={<PDVHistorico />}

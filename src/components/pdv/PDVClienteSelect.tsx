@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Search, User, X } from 'lucide-react';
+import { Search, User, X, Plus, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { useListarClientes } from '@/hooks/useClientes';
+import { useListarClientes, useCriarCliente } from '@/hooks/useClientes';
+import { toast } from 'sonner';
 
 interface Props {
   clienteId: string | null;
@@ -12,9 +13,26 @@ interface Props {
 
 export function PDVClienteSelect({ clienteId, onChange }: Props) {
   const [busca, setBusca] = useState('');
+  const [cadastrando, setCadastrando] = useState(false);
+  const [novoNome, setNovoNome] = useState('');
   const { data } = useListarClientes(busca, 1);
   const clientes = data?.data ?? [];
   const selecionado = clientes.find((c) => c.id === clienteId);
+  const criarCliente = useCriarCliente();
+
+  const handleCadastrar = async () => {
+    if (!novoNome.trim()) return;
+    try {
+      const c = await criarCliente.mutateAsync({ nome: novoNome.trim(), cpf_cnpj: null, telefone: null, email: null, data_nascimento: null, cep: null, rua: null, numero: null, bairro: null, cidade: null, estado: null });
+      onChange((c as any).id);
+      setCadastrando(false);
+      setNovoNome('');
+      setBusca('');
+      toast.success('Cliente cadastrado!');
+    } catch {
+      toast.error('Erro ao cadastrar');
+    }
+  };
 
   if (clienteId && selecionado) {
     return (
@@ -26,6 +44,23 @@ export function PDVClienteSelect({ clienteId, onChange }: Props) {
           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { onChange(null); setBusca(''); }}>
             <X className="h-3 w-3" />
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (cadastrando) {
+    return (
+      <div>
+        <Label>Cadastrar Cliente</Label>
+        <div className="space-y-2 mt-1">
+          <Input value={novoNome} onChange={(e) => setNovoNome(e.target.value)} placeholder="Nome do cliente" className="min-h-[44px]" autoFocus />
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setCadastrando(false)}>Cancelar</Button>
+            <Button size="sm" onClick={handleCadastrar} disabled={criarCliente.isPending || !novoNome.trim()}>
+              {criarCliente.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Salvar'}
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -56,6 +91,12 @@ export function PDVClienteSelect({ clienteId, onChange }: Props) {
           ))}
         </div>
       )}
+      {busca.trim().length > 1 && clientes.length === 0 && (
+        <p className="text-xs text-muted-foreground mt-1">Nenhum cliente encontrado.</p>
+      )}
+      <button onClick={() => setCadastrando(true)} className="text-sm text-accent font-medium hover:underline flex items-center gap-1 mt-2">
+        <Plus className="h-3.5 w-3.5" /> Cadastrar cliente
+      </button>
     </div>
   );
 }
