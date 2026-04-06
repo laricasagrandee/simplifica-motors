@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { OSInfoCard } from './OSInfoCard';
 import { OSProblemaCard } from './OSProblemaCard';
@@ -57,6 +58,7 @@ export function OSDetalheTabs({ os, onMudarStatus, mudarStatusLoading }: Props) 
   const [pecaOpen, setPecaOpen] = useState(false);
   const [servicoOpen, setServicoOpen] = useState(false);
 
+  const qc = useQueryClient();
   const atualizar = useAtualizarOS();
   const { data: itens, isLoading: itensLoading } = useItensPorOS(os.id);
   const addPeca = useAdicionarPeca();
