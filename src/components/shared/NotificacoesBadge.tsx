@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Bell, AlertTriangle, Clock, Wallet, Cake, ShieldCheck, MessageSquare, CarFront, Timer } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
@@ -30,7 +30,24 @@ const colorMap: Record<Alerta['tipo'], string> = {
 export function NotificacoesBadge() {
   const { data: alertas = [] } = useAlertasDashboard();
   const [open, setOpen] = useState(false);
-  const count = alertas.length;
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+
+  const visibleAlertas = alertas.filter((a, i) => !dismissed.has(`${a.tipo}-${i}`));
+  const count = visibleAlertas.length;
+
+  const handleDismiss = useCallback((key: string) => {
+    setDismissed(prev => {
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
+  }, []);
+
+  const handleDismissAll = useCallback(() => {
+    const keys = alertas.map((a, i) => `${a.tipo}-${i}`);
+    setDismissed(new Set(keys));
+    setOpen(false);
+  }, [alertas]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -45,19 +62,32 @@ export function NotificacoesBadge() {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
-        <div className="px-4 py-3 border-b border-border">
+        <div className="px-4 py-3 border-b border-border flex items-center justify-between">
           <p className="text-sm font-semibold">Notificações ({count})</p>
+          {count > 0 && (
+            <button onClick={handleDismissAll} className="text-[11px] text-primary hover:underline">
+              Limpar tudo
+            </button>
+          )}
         </div>
         <div className="max-h-[300px] overflow-y-auto">
           {count === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">Nenhum alerta no momento</p>
           ) : (
-            alertas.map((alerta, i) => {
+            visibleAlertas.map((alerta) => {
+              const origIndex = alertas.indexOf(alerta);
+              const key = `${alerta.tipo}-${origIndex}`;
               const Icon = iconMap[alerta.tipo];
               return (
-                <div key={i} className="flex items-start gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
+                <div key={key} className="flex items-start gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-muted/50 transition-colors group">
                   <Icon className={cn('h-4 w-4 mt-0.5 shrink-0', colorMap[alerta.tipo])} />
-                  <p className="text-xs leading-snug">{alerta.mensagem}</p>
+                  <p className="text-xs leading-snug flex-1">{alerta.mensagem}</p>
+                  <button
+                    onClick={() => handleDismiss(key)}
+                    className="text-[10px] text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                  >
+                    ✕
+                  </button>
                 </div>
               );
             })
