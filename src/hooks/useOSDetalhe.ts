@@ -59,6 +59,11 @@ const STATUS_TIMESTAMPS: Partial<Record<StatusOS, string>> = {
   entregue: 'data_entrega',
 };
 
+async function getGarantiaDias(): Promise<number> {
+  const { data } = await supabase.from('configuracoes').select('*').limit(1).single();
+  return (data as Record<string, unknown>)?.garantia_dias_padrao as number ?? 90;
+}
+
 async function baixarEstoqueAprovacao(osId: string) {
   const { data: itens } = await supabase
     .from('os_itens')
@@ -147,6 +152,15 @@ export function useMudarStatusOS() {
       const update: Record<string, unknown> = { status };
       const tsField = STATUS_TIMESTAMPS[status];
       if (tsField) update[tsField] = new Date().toISOString();
+
+      // Auto warranty when delivering
+      if (status === 'entregue') {
+        const dias = await getGarantiaDias();
+        const ate = new Date();
+        ate.setDate(ate.getDate() + dias);
+        update.garantia_dias = dias;
+        update.garantia_ate = ate.toISOString().split('T')[0];
+      }
 
       const { error } = await supabase.from('ordens_servico').update(update).eq('id', id);
       if (error) throw error;
