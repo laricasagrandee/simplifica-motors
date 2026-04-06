@@ -45,7 +45,7 @@ export function NovaOSVeiculo({ clienteId, veiculoSelecionado, quilometragem, on
                     <Icon className="h-4.5 w-4.5 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">{v.marca} {v.modelo}</p>
+                    <p className="text-sm font-medium text-foreground">{[v.marca, v.modelo].filter(Boolean).join(' ') || 'Veículo'}</p>
                     <div className="flex items-center gap-2 mt-1">
                       {v.placa && <PlacaBadge placa={v.placa} />}
                       {v.ano && <span className="text-xs text-muted-foreground">{v.ano}</span>}
