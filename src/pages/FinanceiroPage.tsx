@@ -110,6 +110,7 @@ function NFTab() {
 }
 
 export default function FinanceiroPage() {
+  const [searchParams] = useSearchParams();
   const [filtros, setFiltros] = useState<FiltrosState>({ periodo: 'mes', ...calcularDatas('mes') });
   const [pagina, setPagina] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
@@ -131,7 +132,8 @@ export default function FinanceiroPage() {
   const caixaAberto = caixaHoje.data?.status === 'aberto';
   const saldoCaixa = caixaAberto
     ? (caixaHoje.data!.saldo_abertura ?? 0) + (caixaHoje.data!.total_entradas ?? 0) - (caixaHoje.data!.total_saidas ?? 0) : 0;
-  const defaultTab = caixaAberto ? 'movimentacoes' : 'caixa';
+  const tabParam = searchParams.get('tab');
+  const defaultTab = tabParam || (caixaAberto ? 'movimentacoes' : 'caixa');
 
   return (
     <AppLayout>
