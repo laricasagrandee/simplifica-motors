@@ -55,8 +55,16 @@ export function AddPecaDialog({ open, onClose, onAdicionar, loading }: Props) {
             <div className="max-h-48 overflow-y-auto divide-y divide-border border border-border rounded-lg">
               {pecas.map((p) => (
                 <button key={p.id} onClick={() => handleSelect(p)} className="w-full flex justify-between p-3 hover:bg-muted/30 text-left min-h-[44px]">
-                  <div><p className="text-sm font-medium">{p.nome}</p>{p.codigo && <p className="text-xs font-mono text-muted-foreground">{p.codigo}</p>}</div>
-                  <div className="text-right"><p className="text-sm font-mono">{formatarMoeda(p.preco_venda)}</p><p className="text-xs text-muted-foreground">Est: {p.estoque_atual}</p></div>
+                  <div>
+                    <p className="text-sm font-medium">{p.nome}</p>
+                    {p.codigo && <p className="text-xs font-mono text-muted-foreground">{p.codigo}</p>}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-mono">{formatarMoeda(p.preco_venda)}</p>
+                    <p className={`text-xs ${(p.estoque_atual ?? 0) <= (p.estoque_minimo ?? 0) ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
+                      Est: {p.estoque_atual}{(p.estoque_atual ?? 0) <= (p.estoque_minimo ?? 0) ? ' ⚠️' : ''}
+                    </p>
+                  </div>
                 </button>
               ))}
             </div>

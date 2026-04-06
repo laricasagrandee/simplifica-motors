@@ -44,6 +44,22 @@ export function useAlertasDashboard() {
         });
       });
 
+      // OS com previsão de entrega atrasada
+      const hojeStr = new Date().toISOString().slice(0, 10);
+      const { data: osAtrasadasPrev } = await supabase
+        .from('ordens_servico')
+        .select('numero, previsao_entrega')
+        .eq('status', 'em_execucao')
+        .not('previsao_entrega', 'is', null)
+        .lt('previsao_entrega', hojeStr);
+      (osAtrasadasPrev ?? []).forEach((os: Record<string, unknown>) => {
+        alertas.push({
+          tipo: 'os_atrasada',
+          mensagem: `OS-${os.numero} atrasada! Previsão era ${new Date(os.previsao_entrega as string + 'T00:00:00').toLocaleDateString('pt-BR')}`,
+          prioridade: 1,
+        });
+      });
+
       // OS em execução > 7 dias
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);

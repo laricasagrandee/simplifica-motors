@@ -2,6 +2,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge';
 import { MoneyDisplay } from '@/components/shared/MoneyDisplay';
 import { PlacaBadge } from '@/components/shared/PlacaBadge';
 import { formatarDataCurta, formatarNumeroOS } from '@/lib/formatters';
+import { formatarVeiculo } from '@/lib/veiculoUtils';
 import { Bike, Car } from 'lucide-react';
 import type { OrdemServico, StatusOS } from '@/types/database';
 
@@ -16,7 +17,7 @@ export function OSListMobile({ ordens, onVer }: Props) {
       {ordens.map((os) => {
         const moto = os.motos as unknown as Record<string, string> | undefined;
         const cliente = os.clientes as unknown as Record<string, string> | undefined;
-        const Icon = Bike;
+        const veiculoLabel = formatarVeiculo(moto);
         return (
           <button key={os.id} onClick={() => onVer(os.id)} className="w-full bg-card border border-border rounded-xl p-4 text-left card-hover">
             <div className="flex items-center justify-between mb-2">
@@ -25,8 +26,8 @@ export function OSListMobile({ ordens, onVer }: Props) {
             </div>
             <p className="text-sm font-medium text-foreground">{cliente?.nome ?? '—'}</p>
             <div className="flex items-center gap-1.5 mt-1">
-              <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">{moto?.marca} {moto?.modelo}</span>
+              <Bike className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">{veiculoLabel}</span>
               {moto?.placa && <PlacaBadge placa={moto.placa} />}
             </div>
             <div className="flex items-center justify-between mt-3">

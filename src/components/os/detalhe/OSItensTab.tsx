@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MoneyDisplay } from '@/components/shared/MoneyDisplay';
@@ -21,6 +22,27 @@ interface Props {
 }
 
 export function OSItensTab({ itens, loading, valorPecas, valorMaoObra, desconto, valorTotal, onAdicionarPeca, onAdicionarServico, onRemover, onDescontoChange }: Props) {
+  const [tipoDesconto, setTipoDesconto] = useState<'valor' | 'percentual'>('valor');
+  const [descontoInput, setDescontoInput] = useState(desconto > 0 ? String(desconto) : '');
+
+  const subtotal = valorPecas + valorMaoObra;
+
+  const handleDescontoChange = (val: string) => {
+    setDescontoInput(val);
+    const num = parseFloat(val) || 0;
+    if (tipoDesconto === 'percentual') {
+      onDescontoChange(Math.round((subtotal * num / 100) * 100) / 100);
+    } else {
+      onDescontoChange(num);
+    }
+  };
+
+  const handleTipoChange = (tipo: 'valor' | 'percentual') => {
+    setTipoDesconto(tipo);
+    setDescontoInput('');
+    onDescontoChange(0);
+  };
+
   if (loading) return <LoadingState variant="table" />;
 
   return (
@@ -73,9 +95,22 @@ export function OSItensTab({ itens, loading, valorPecas, valorMaoObra, desconto,
         <div className="flex justify-between text-sm items-center">
           <span className="text-muted-foreground">Desconto</span>
           <div className="flex items-center gap-1">
-            <span className="text-xs text-muted-foreground">R$</span>
-            <Input type="number" min="0" step="0.01" value={desconto || ''} onChange={(e) => onDescontoChange(parseFloat(e.target.value) || 0)}
+            <div className="flex border border-border rounded-md overflow-hidden">
+              <button
+                onClick={() => handleTipoChange('valor')}
+                className={`px-2 py-1 text-xs font-medium transition-colors ${tipoDesconto === 'valor' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+              >R$</button>
+              <button
+                onClick={() => handleTipoChange('percentual')}
+                className={`px-2 py-1 text-xs font-medium transition-colors ${tipoDesconto === 'percentual' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+              >%</button>
+            </div>
+            <Input type="number" min="0" step="0.01" value={descontoInput} onChange={(e) => handleDescontoChange(e.target.value)}
+              placeholder={tipoDesconto === 'percentual' ? '0%' : 'R$ 0,00'}
               className="w-24 h-8 text-right font-mono text-sm" />
+            {tipoDesconto === 'percentual' && desconto > 0 && (
+              <span className="text-xs text-muted-foreground whitespace-nowrap">= {formatarMoeda(desconto)}</span>
+            )}
           </div>
         </div>
         <div className="border-t border-border pt-2 flex justify-between">

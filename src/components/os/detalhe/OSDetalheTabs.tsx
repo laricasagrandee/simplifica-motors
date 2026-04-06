@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Printer } from 'lucide-react';
 import { OSInfoCard } from './OSInfoCard';
 import { OSProblemaCard } from './OSProblemaCard';
 import { OSMecanicoSelect } from './OSMecanicoSelect';
@@ -19,6 +21,8 @@ import { useAtualizarOS } from '@/hooks/useOSDetalhe';
 import { useItensPorOS, useAdicionarPeca, useAdicionarServico, useRemoverItem } from '@/hooks/useOSItens';
 import { useFotosPorOS, useUploadFoto, useRemoverFoto } from '@/hooks/useOSFotos';
 import { useAtualizarChecklist } from '@/hooks/useOSChecklist';
+import { useConfiguracoes } from '@/hooks/useConfiguracoes';
+import { gerarPdfOrcamento } from '@/lib/gerarPdfOS';
 import { toast } from 'sonner';
 import type { OrdemServico, Cliente, Veiculo, ChecklistItem, StatusOS } from '@/types/database';
 
@@ -59,6 +63,7 @@ export function OSDetalheTabs({ os, onMudarStatus, mudarStatusLoading }: Props) 
   const [servicoOpen, setServicoOpen] = useState(false);
 
   const qc = useQueryClient();
+  const { data: configData } = useConfiguracoes();
   const atualizar = useAtualizarOS();
   const { data: itens, isLoading: itensLoading } = useItensPorOS(os.id);
   const addPeca = useAdicionarPeca();
@@ -105,6 +110,13 @@ export function OSDetalheTabs({ os, onMudarStatus, mudarStatusLoading }: Props) 
             onMudar={async (id) => { await atualizar.mutateAsync({ id: os.id, mecanico_id: id }); }} />
         </TabsContent>
         <TabsContent value="orcamento">
+          {(itens ?? []).length > 0 && configData && (
+            <div className="flex justify-end mb-3">
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => gerarPdfOrcamento(os, itens ?? [], configData)}>
+                <Printer className="h-3.5 w-3.5" /> Imprimir Orçamento
+              </Button>
+            </div>
+          )}
           <OSItensTab itens={itens ?? []} loading={itensLoading}
             valorPecas={valorPecas} valorMaoObra={valorMaoObra} desconto={os.desconto ?? 0} valorTotal={valorTotal}
             onAdicionarPeca={() => setPecaOpen(true)} onAdicionarServico={() => setServicoOpen(true)}

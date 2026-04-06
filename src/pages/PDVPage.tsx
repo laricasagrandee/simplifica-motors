@@ -1,13 +1,11 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Lock, ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { PDVLayout } from '@/components/pdv/PDVLayout';
 import { PDVBuscaProduto } from '@/components/pdv/PDVBuscaProduto';
 import { PDVCarrinho } from '@/components/pdv/PDVCarrinho';
 import { PDVPagamentoDialog } from '@/components/pdv/PDVPagamentoDialog';
 import { PDVHistorico } from '@/components/pdv/PDVHistorico';
+import { CaixaInlineOpener } from '@/components/os/detalhe/pagamento/CaixaInlineOpener';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { useCriarVenda } from '@/hooks/usePDV';
@@ -16,8 +14,7 @@ import type { CarrinhoItem } from '@/components/pdv/PDVCarrinhoItem';
 import type { Peca, FormaPagamento } from '@/types/database';
 
 export default function PDVPage() {
-  const navigate = useNavigate();
-  const { data: caixa, isLoading: caixaLoading } = useCaixaHoje();
+  const { data: caixa, isLoading: caixaLoading, refetch } = useCaixaHoje();
   const caixaAberto = caixa?.status === 'aberto';
 
   const [itens, setItens] = useState<CarrinhoItem[]>([]);
@@ -61,35 +58,26 @@ export default function PDVPage() {
 
   if (caixaLoading) return <AppLayout><LoadingState /></AppLayout>;
 
-  if (!caixaAberto) {
-    return (
-      <AppLayout>
-        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-          <div className="rounded-full bg-muted p-5">
-            <Lock className="h-12 w-12 text-muted-foreground" strokeWidth={1.5} />
-          </div>
-          <h2 className="text-xl font-display font-bold text-foreground">Abra o caixa para começar a vender</h2>
-          <p className="text-muted-foreground max-w-sm">
-            Antes de registrar vendas, é necessário abrir o caixa do dia no módulo Financeiro.
-          </p>
-          <Button size="lg" className="h-12 gap-2 mt-2" onClick={() => navigate('/financeiro')}>
-            Abrir Caixa <ArrowRight className="h-5 w-5" />
-          </Button>
-        </div>
-      </AppLayout>
-    );
-  }
-
   return (
     <>
       <PDVLayout carrinhoCount={itens.length}
-        produtosPanel={<PDVBuscaProduto onAdicionar={adicionar} />}
+        produtosPanel={
+          <div className="space-y-3">
+            {!caixaAberto && (
+              <CaixaInlineOpener onAberto={() => refetch()} />
+            )}
+            <PDVBuscaProduto onAdicionar={adicionar} />
+          </div>
+        }
         historicoPanel={<PDVHistorico />}
         carrinhoPanel={
           <PDVCarrinho itens={itens} onAlterarQtd={alterarQtd} onRemover={remover}
             subtotal={subtotal} desconto={desconto} tipoDesconto={tipoDesconto}
             onDescontoChange={setDesconto} onTipoDescontoChange={setTipoDesconto}
-            total={total} onFechar={() => setPagamentoOpen(true)} loading={criarVenda.isPending} />
+            total={total} onFechar={() => {
+              if (!caixaAberto) { toast.error('Abra o caixa antes de finalizar a venda'); return; }
+              setPagamentoOpen(true);
+            }} loading={criarVenda.isPending} />
         }
       />
       <PDVPagamentoDialog open={pagamentoOpen} total={total}

@@ -13,14 +13,15 @@ export function ConfigDadosOficina({ config, loading, onSalvar, onUploadLogo }: 
   const [form, setForm] = useState<Record<string, string>>({});
   if (loading || !config) return <Skeleton className="h-60 w-full" />;
 
-  const v = (k: keyof Configuracao) => form[k] ?? (config[k] as string || '');
+  const v = (k: string) => form[k] ?? ((config as unknown as Record<string, unknown>)[k] as string || '');
   const set = (k: string, val: string) => setForm(p => ({ ...p, [k]: val }));
 
-  const campos: { key: keyof Configuracao; label: string }[] = [
+  const campos: { key: keyof Configuracao | string; label: string }[] = [
     { key: 'razao_social', label: 'Razão Social' }, { key: 'nome_fantasia', label: 'Nome Fantasia' },
     { key: 'cnpj', label: 'CNPJ' }, { key: 'ie', label: 'Inscrição Estadual' },
     { key: 'telefone', label: 'Telefone' }, { key: 'email', label: 'Email' },
     { key: 'endereco_completo', label: 'Endereço Completo' },
+    { key: 'garantia_dias_padrao', label: 'Dias de Garantia Padrão' },
   ];
 
   return (

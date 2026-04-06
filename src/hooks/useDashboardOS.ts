@@ -34,7 +34,7 @@ export function useUltimasOS() {
           valor_total: Number(os.valor_total),
           criado_em: os.criado_em as string,
           cliente_nome: (cliente?.nome as string) ?? 'Sem cliente',
-          moto_modelo: (moto?.modelo as string) ?? 'Sem moto',
+          moto_modelo: [moto?.marca, moto?.modelo].filter(Boolean).join(' ') || '',
           moto_placa: (moto?.placa as string) ?? null,
         };
       });

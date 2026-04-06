@@ -24,23 +24,26 @@ export function RecentOS({ data, loading }: RecentOSProps) {
         <p className="text-sm text-muted-foreground text-center py-8">Nenhuma OS registrada</p>
       ) : (
         <div className="space-y-1">
-          {data.map((os) => (
-            <button
-              key={os.id}
-              onClick={() => navigate(`/os/${os.id}`)}
-              className="w-full flex items-center justify-between py-2.5 px-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
-            >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-muted-foreground">OS-{os.numero}</span>
-                  <StatusBadge status={os.status as StatusOS} />
+          {data.map((os) => {
+            const veiculoLabel = [os.moto_modelo].filter(Boolean).join(' ') || 'Veículo';
+            return (
+              <button
+                key={os.id}
+                onClick={() => navigate(`/os/${os.id}`)}
+                className="w-full flex items-center justify-between py-2.5 px-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs text-muted-foreground">OS-{os.numero}</span>
+                    <StatusBadge status={os.status as StatusOS} />
+                  </div>
+                  <p className="text-sm font-medium text-foreground truncate mt-0.5">{os.cliente_nome}</p>
+                  <p className="text-xs text-muted-foreground">{veiculoLabel}{os.moto_placa ? ` · ${os.moto_placa}` : ''}</p>
                 </div>
-                <p className="text-sm font-medium text-foreground truncate mt-0.5">{os.cliente_nome}</p>
-                <p className="text-xs text-muted-foreground">{os.moto_modelo}{os.moto_placa ? ` · ${os.moto_placa}` : ''}</p>
-              </div>
-              {os.valor_total > 0 && <MoneyDisplay valor={os.valor_total} className="text-sm text-foreground shrink-0" />}
-            </button>
-          ))}
+                {os.valor_total > 0 && <MoneyDisplay valor={os.valor_total} className="text-sm text-foreground shrink-0" />}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
