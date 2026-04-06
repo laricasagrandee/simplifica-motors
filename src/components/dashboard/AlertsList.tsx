@@ -43,10 +43,6 @@ export function AlertsList({ data, loading }: AlertsListProps) {
               </div>
             );
           })}
-                <p className="text-sm text-foreground">{a.mensagem}</p>
-              </div>
-            );
-          })}
         </div>
       )}
     </div>
