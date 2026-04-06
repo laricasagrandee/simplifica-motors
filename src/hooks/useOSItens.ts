@@ -3,6 +3,44 @@ import { supabase } from '@/integrations/supabase/client';
 import { sanitizeInput, sanitizeMonetary, sanitizeQuantity } from '@/lib/sanitize';
 import type { OSItem } from '@/types/database';
 
+async function recalcularTotaisOS(osId: string) {
+  const { data: itens } = await supabase
+    .from('os_itens')
+    .select('tipo, valor_total, peca_id, quantidade')
+    .eq('os_id', osId);
+
+  const items = itens ?? [];
+  const valorPecas = items.filter(i => i.tipo === 'peca').reduce((s, i) => s + Number(i.valor_total), 0);
+  const valorMaoObra = items.filter(i => i.tipo === 'servico').reduce((s, i) => s + Number(i.valor_total), 0);
+
+  const { data: osData } = await supabase.from('ordens_servico').select('desconto').eq('id', osId).single();
+  const desconto = osData?.desconto ?? 0;
+  const valorTotal = valorPecas + valorMaoObra - desconto;
+
+  // Calculate custo_pecas from peca costs
+  let custoPecas = 0;
+  const pecasComId = items.filter(i => i.tipo === 'peca' && i.peca_id);
+  if (pecasComId.length > 0) {
+    const pecaIds = pecasComId.map(i => i.peca_id!);
+    const { data: pecasData } = await supabase.from('pecas').select('id, preco_custo').in('id', pecaIds);
+    const custoMap = new Map((pecasData ?? []).map(p => [p.id, p.preco_custo]));
+    for (const item of pecasComId) {
+      const custo = custoMap.get(item.peca_id!) ?? 0;
+      custoPecas += custo * item.quantidade;
+    }
+  }
+
+  const lucroBruto = valorTotal - custoPecas;
+
+  await supabase.from('ordens_servico').update({
+    valor_pecas: valorPecas,
+    valor_mao_obra: valorMaoObra,
+    valor_total: valorTotal,
+    custo_pecas: custoPecas,
+    lucro_bruto: lucroBruto,
+  }).eq('id', osId);
+}
+
 export function useItensPorOS(osId: string) {
   return useQuery<OSItem[]>({
     queryKey: ['os-itens', osId],
@@ -33,6 +71,7 @@ export function useAdicionarPeca() {
         valor_total: sanitizeMonetary(input.quantidade * input.valorUnitario),
       });
       if (error) throw error;
+      await recalcularTotaisOS(input.osId);
     },
     onSuccess: (_, v) => {
       qc.invalidateQueries({ queryKey: ['os-itens', v.osId] });
@@ -55,6 +94,7 @@ export function useAdicionarServico() {
         valor_total: sanitizeMonetary(input.valorUnitario),
       });
       if (error) throw error;
+      await recalcularTotaisOS(input.osId);
     },
     onSuccess: (_, v) => {
       qc.invalidateQueries({ queryKey: ['os-itens', v.osId] });
@@ -69,6 +109,7 @@ export function useRemoverItem() {
     mutationFn: async ({ id, osId }: { id: string; osId: string }) => {
       const { error } = await supabase.from('os_itens').delete().eq('id', id);
       if (error) throw error;
+      await recalcularTotaisOS(osId);
     },
     onSuccess: (_, v) => {
       qc.invalidateQueries({ queryKey: ['os-itens', v.osId] });
@@ -77,3 +118,5 @@ export function useRemoverItem() {
     },
   });
 }
+
+export { recalcularTotaisOS };

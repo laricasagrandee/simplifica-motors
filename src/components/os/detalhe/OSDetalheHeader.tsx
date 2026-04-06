@@ -21,10 +21,10 @@ interface Props {
 }
 
 const NEXT_STATUS: Partial<Record<StatusOS, { status: StatusOS; label: string }>> = {
-  aberta: { status: 'em_orcamento', label: 'Iniciar Orçamento' },
-  em_orcamento: { status: 'aprovada', label: 'Enviar para Aprovação' },
-  aprovada: { status: 'em_execucao', label: 'Iniciar Execução' },
-  em_execucao: { status: 'concluida', label: 'Concluir Serviço' },
+  aberta: { status: 'em_orcamento', label: 'Enviar Orçamento' },
+  em_orcamento: { status: 'aprovada', label: 'Cliente Aprovou ✅' },
+  aprovada: { status: 'em_execucao', label: 'Começar Serviço 🔧' },
+  em_execucao: { status: 'concluida', label: 'Serviço Pronto ✔️' },
 };
 
 export function OSDetalheHeader({ os, itens, onMudarStatus, onRecusar, loading }: Props) {
@@ -71,13 +71,13 @@ export function OSDetalheHeader({ os, itens, onMudarStatus, onRecusar, loading }
           <Button onClick={() => setConfirmOpen(true)} disabled={loading}>{next.label}</Button>
         )}
         {showEntrega && (
-          <Button variant="secondary" onClick={handleEntrega} disabled={loading}>Registrar Entrega</Button>
+          <Button variant="secondary" onClick={handleEntrega} disabled={loading}>Cliente Pagou e Retirou 🚗</Button>
         )}
         {entregaBloqueada && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span><Button variant="secondary" disabled>Registrar Entrega</Button></span>
+                <span><Button variant="secondary" disabled>Cliente Pagou e Retirou 🚗</Button></span>
               </TooltipTrigger>
               <TooltipContent>Registre o pagamento antes de entregar</TooltipContent>
             </Tooltip>

@@ -41,7 +41,7 @@ export function OSInfoCard({ cliente, veiculo }: Props) {
               <Icon className="h-5 w-5 text-muted-foreground" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-medium text-sm text-foreground">{veiculo.marca} {veiculo.modelo}</p>
+              <p className="font-medium text-sm text-foreground">{[veiculo.marca, veiculo.modelo].filter(Boolean).join(' ') || 'Veículo'}</p>
               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                 {veiculo.placa && <PlacaBadge placa={veiculo.placa} />}
                 {veiculo.ano && <span className="text-xs text-muted-foreground">{veiculo.ano}</span>}
@@ -60,7 +60,7 @@ export function OSInfoCard({ cliente, veiculo }: Props) {
         open={historicoOpen}
         onClose={() => setHistoricoOpen(false)}
         veiculoId={veiculo.id}
-        veiculoNome={`${veiculo.marca} ${veiculo.modelo} ${veiculo.placa}`}
+        veiculoNome={[veiculo.marca, veiculo.modelo, veiculo.placa].filter(Boolean).join(' ') || 'Veículo'}
       />
     </>
   );

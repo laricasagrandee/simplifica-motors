@@ -3,7 +3,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-interface ConfirmDialogProps {
+export interface ConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   titulo: string;
@@ -11,15 +11,17 @@ interface ConfirmDialogProps {
   onConfirm: () => void;
   confirmLabel?: string;
   variant?: 'default' | 'destructive';
+  customContent?: React.ReactNode;
 }
 
-export function ConfirmDialog({ open, onOpenChange, titulo, descricao, onConfirm, confirmLabel = 'Confirmar', variant = 'default' }: ConfirmDialogProps) {
+export function ConfirmDialog({ open, onOpenChange, titulo, descricao, onConfirm, confirmLabel = 'Confirmar', variant = 'default', customContent }: ConfirmDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{titulo}</AlertDialogTitle>
-          <AlertDialogDescription>{descricao}</AlertDialogDescription>
+          {descricao && <AlertDialogDescription>{descricao}</AlertDialogDescription>}
+          {customContent}
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>

@@ -10,6 +10,7 @@ import { OSAcoesMenu } from '@/components/os/detalhe/OSAcoesMenu';
 import { EnviarSatisfacaoBtn } from '@/components/clientes/EnviarSatisfacaoBtn';
 import { useOSPorId, useMudarStatusOS, useAtualizarOS } from '@/hooks/useOSDetalhe';
 import { useItensPorOS } from '@/hooks/useOSItens';
+import { STATUS_OS_CONFIG } from '@/lib/constants';
 import { toast } from 'sonner';
 import type { StatusOS } from '@/types/database';
 
@@ -26,7 +27,7 @@ export default function OSDetalhePage() {
 
   const handleMudarStatus = async (status: StatusOS) => {
     await mudarStatus.mutateAsync({ id: os.id, status });
-    toast.success(`Status alterado para ${status}`);
+    toast.success(`Status alterado para ${STATUS_OS_CONFIG[status]?.label ?? status}`);
   };
 
   return (

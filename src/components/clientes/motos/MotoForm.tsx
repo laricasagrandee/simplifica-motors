@@ -31,8 +31,6 @@ export function MotoForm({ open, onClose, clienteId, moto, onSalvar, loading }: 
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!form.marca) e.marca = 'Marca obrigatória';
-    if (!form.modelo.trim()) e.modelo = 'Modelo obrigatório';
     if (form.placa && !validarPlaca(form.placa)) e.placa = 'Placa inválida';
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -61,11 +59,11 @@ export function MotoForm({ open, onClose, clienteId, moto, onSalvar, loading }: 
           <DialogTitle className="font-display">{moto ? 'Editar Moto' : 'Nova Moto'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <F label="Marca" required error={errors.marca}>
+          <F label="Marca">
             <SearchableSelect value={form.marca} onValueChange={(v) => set('marca', v)} options={marcaOptions} placeholder="Selecione" />
           </F>
           <div className="grid grid-cols-2 gap-4">
-            <F label="Modelo" required error={errors.modelo}><Input value={form.modelo} onChange={(e) => set('modelo', e.target.value)} maxLength={100} className="min-h-[44px]" /></F>
+            <F label="Modelo"><Input value={form.modelo} onChange={(e) => set('modelo', e.target.value)} maxLength={100} className="min-h-[44px]" /></F>
             <F label="Ano"><Input type="number" value={form.ano} onChange={(e) => set('ano', e.target.value)} min={1950} max={2030} className="min-h-[44px]" /></F>
           </div>
           <div className="grid grid-cols-2 gap-4">
