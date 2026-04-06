@@ -34,7 +34,18 @@ function OSPagasHoje() {
       return data || [];
     },
   });
-  if (!osPagas?.length) return null;
+  if (!osPagas?.length) return (
+    <Card>
+      <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2">
+        <ClipboardList className="h-4 w-4" /> Pagamentos de OS Hoje
+      </CardTitle></CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground text-center py-4">
+          Nenhuma movimentação hoje. Quando registrar pagamentos, eles vão aparecer aqui.
+        </p>
+      </CardContent>
+    </Card>
+  );
   return (
     <Card>
       <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2">
