@@ -1,10 +1,15 @@
 import { useState } from 'react';
-import { FileEdit, Send, Wrench, Clock, DollarSign, CheckCircle } from 'lucide-react';
+import { FileEdit, Send, Wrench, Clock, DollarSign, CheckCircle, CalendarClock, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { validarTransicaoOS } from '@/lib/osValidations';
 import { useConfiguracoes } from '@/hooks/useConfiguracoes';
+import { useAtualizarOS } from '@/hooks/useOSDetalhe';
 import { OrcamentoPreviewDialog } from './OrcamentoPreviewDialog';
+import { formatarVeiculoCompleto } from '@/lib/veiculoUtils';
+import { formatarMoeda } from '@/lib/formatters';
 import { toast } from 'sonner';
+import { isBefore, format } from 'date-fns';
 import type { OrdemServico, OSItem, StatusOS } from '@/types/database';
 
 interface Props {
@@ -44,6 +49,7 @@ export function OSProximoPasso({ os, itens = [], onMudarStatus, onTabChange, loa
   const cfg = configs[os.status];
   if (!cfg) return null;
   const { data: config } = useConfiguracoes();
+  const atualizar = useAtualizarOS();
   const Icon = cfg.icon;
   const telefone = os.clientes?.telefone?.replace(/\D/g, '');
   const nomeOficina = config?.nome_fantasia ?? 'Nossa Oficina';
@@ -55,12 +61,38 @@ export function OSProximoPasso({ os, itens = [], onMudarStatus, onTabChange, loa
     await onMudarStatus(status);
   };
 
+  // Previsao de entrega
+  const previsaoAtrasada = os.previsao_entrega && os.status !== 'concluida' && os.status !== 'entregue'
+    && isBefore(new Date(os.previsao_entrega), new Date());
+
+  // WhatsApp message for "Pronto"
+  const veiculoLabel = formatarVeiculoCompleto(os.motos as unknown as Record<string, string> | undefined);
+  const msgPronto = `Olá ${os.clientes?.nome ?? 'Cliente'}! Seu veículo ${veiculoLabel} está pronto para retirada aqui na ${nomeOficina}. O valor total é ${formatarMoeda(os.valor_total ?? 0)}. Aceitamos Pix, cartão e dinheiro. Aguardamos você!`;
+
   return (
     <>
       <div className={`${cfg.bg} ${cfg.border} border rounded-lg p-4 mb-4 flex flex-col sm:flex-row items-start sm:items-center gap-3`}>
         <Icon className={`h-5 w-5 shrink-0 ${cfg.text}`} />
-        <p className={`text-sm font-medium ${cfg.text} flex-1`}>{getMsg(os)}</p>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex-1 space-y-1">
+          <p className={`text-sm font-medium ${cfg.text}`}>{getMsg(os)}</p>
+          {os.status === 'em_execucao' && os.previsao_entrega && (
+            <p className={`text-xs font-medium ${previsaoAtrasada ? 'text-destructive' : 'text-muted-foreground'}`}>
+              {previsaoAtrasada
+                ? `⚠️ Atrasada! Previsão era ${format(new Date(os.previsao_entrega + 'T00:00:00'), 'dd/MM/yyyy')}`
+                : `Previsão: ${format(new Date(os.previsao_entrega + 'T00:00:00'), 'dd/MM/yyyy')}`}
+            </p>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2 items-center">
+          {os.status === 'em_execucao' && (
+            <div className="flex items-center gap-1.5">
+              <CalendarClock className="h-3.5 w-3.5 text-muted-foreground" />
+              <Input type="date" className="h-8 w-36 text-xs"
+                value={os.previsao_entrega ?? ''}
+                onChange={(e) => atualizar.mutate({ id: os.id, previsao_entrega: e.target.value || null })}
+              />
+            </div>
+          )}
           {os.status === 'aberta' && <Button size="sm" variant="outline" onClick={() => onTabChange('orcamento')}>Ir para Orçamento</Button>}
           {os.status === 'em_orcamento' && (
             <>
@@ -74,6 +106,13 @@ export function OSProximoPasso({ os, itens = [], onMudarStatus, onTabChange, loa
             <Button size="sm" onClick={() => handleMudar('em_execucao')} disabled={loading}>Começar Serviço 🔧</Button>
           )}
           {os.status === 'em_execucao' && <Button size="sm" onClick={() => handleMudar('concluida')} disabled={loading}>Serviço Pronto ✔️</Button>}
+          {os.status === 'concluida' && telefone && (
+            <Button size="sm" variant="outline" className="gap-1" asChild>
+              <a href={`https://wa.me/55${telefone}?text=${encodeURIComponent(msgPronto)}`} target="_blank" rel="noreferrer">
+                <MessageCircle className="h-3.5 w-3.5" /> Avisar Cliente
+              </a>
+            </Button>
+          )}
           {os.status === 'concluida' && !pago && <Button size="sm" onClick={() => onTabChange('pagamento')}>Registrar Pagamento</Button>}
           {os.status === 'concluida' && pago && <Button size="sm" onClick={() => handleMudar('entregue')} disabled={loading}>Cliente Pagou e Retirou 🚗</Button>}
           {os.status === 'entregue' && telefone && (
