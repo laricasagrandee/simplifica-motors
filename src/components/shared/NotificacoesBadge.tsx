@@ -1,9 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Bell, AlertTriangle, Clock, Wallet, Cake, ShieldCheck, MessageSquare, CarFront, Timer } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { useAlertasDashboard, type Alerta } from '@/hooks/useDashboardAlertas';
 import { cn } from '@/lib/utils';
+
+const DISMISSED_ALERTS_KEY = 'dismissed-dashboard-alertas';
 
 const iconMap: Record<Alerta['tipo'], typeof AlertTriangle> = {
   estoque: AlertTriangle,
@@ -27,25 +29,73 @@ const colorMap: Record<Alerta['tipo'], string> = {
   execucao_longa: 'text-destructive',
 };
 
+function getAlertKey(alerta: Alerta) {
+  return `${alerta.tipo}:${alerta.mensagem}`;
+}
+
+function readDismissedAlerts() {
+  if (typeof window === 'undefined') return new Set<string>();
+
+  try {
+    const raw = window.localStorage.getItem(DISMISSED_ALERTS_KEY);
+    if (!raw) return new Set<string>();
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? new Set<string>(parsed) : new Set<string>();
+  } catch {
+    return new Set<string>();
+  }
+}
+
+function saveDismissedAlerts(keys: Set<string>) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(DISMISSED_ALERTS_KEY, JSON.stringify(Array.from(keys)));
+}
+
 export function NotificacoesBadge() {
   const { data: alertas = [] } = useAlertasDashboard();
   const [open, setOpen] = useState(false);
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [dismissed, setDismissed] = useState<Set<string>>(() => readDismissedAlerts());
 
-  const visibleAlertas = alertas.filter((a, i) => !dismissed.has(`${a.tipo}-${i}`));
+  useEffect(() => {
+    const currentKeys = new Set(alertas.map(getAlertKey));
+
+    setDismissed((prev) => {
+      const next = new Set(Array.from(prev).filter((key) => currentKeys.has(key)));
+      saveDismissedAlerts(next);
+      return next;
+    });
+  }, [alertas]);
+
+  useEffect(() => {
+    const syncDismissedAlerts = (event: StorageEvent) => {
+      if (event.key === DISMISSED_ALERTS_KEY) {
+        setDismissed(readDismissedAlerts());
+      }
+    };
+
+    window.addEventListener('storage', syncDismissedAlerts);
+    return () => window.removeEventListener('storage', syncDismissedAlerts);
+  }, []);
+
+  const visibleAlertas = useMemo(
+    () => alertas.filter((alerta) => !dismissed.has(getAlertKey(alerta))),
+    [alertas, dismissed],
+  );
   const count = visibleAlertas.length;
 
   const handleDismiss = useCallback((key: string) => {
-    setDismissed(prev => {
+    setDismissed((prev) => {
       const next = new Set(prev);
       next.add(key);
+      saveDismissedAlerts(next);
       return next;
     });
   }, []);
 
   const handleDismissAll = useCallback(() => {
-    const keys = alertas.map((a, i) => `${a.tipo}-${i}`);
-    setDismissed(new Set(keys));
+    const keys = new Set(alertas.map(getAlertKey));
+    setDismissed(keys);
+    saveDismissedAlerts(keys);
     setOpen(false);
   }, [alertas]);
 
@@ -75,9 +125,9 @@ export function NotificacoesBadge() {
             <p className="text-sm text-muted-foreground text-center py-6">Nenhum alerta no momento</p>
           ) : (
             visibleAlertas.map((alerta) => {
-              const origIndex = alertas.indexOf(alerta);
-              const key = `${alerta.tipo}-${origIndex}`;
+              const key = getAlertKey(alerta);
               const Icon = iconMap[alerta.tipo];
+
               return (
                 <div key={key} className="flex items-start gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-muted/50 transition-colors group">
                   <Icon className={cn('h-4 w-4 mt-0.5 shrink-0', colorMap[alerta.tipo])} />
@@ -85,6 +135,7 @@ export function NotificacoesBadge() {
                   <button
                     onClick={() => handleDismiss(key)}
                     className="text-[10px] text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                    aria-label="Dispensar notificação"
                   >
                     ✕
                   </button>
