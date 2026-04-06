@@ -1,8 +1,7 @@
 import { NavLink } from 'react-router-dom';
-import { X, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { X } from 'lucide-react';
 import { useAuthContext } from './AuthProvider';
-import { sidebarGroups } from './AppSidebar';
+import { menuItems } from './AppSidebar';
 import { SidebarUserFooter } from './SidebarUserFooter';
 import { useCaixaHoje } from '@/hooks/useCaixa';
 import { cn } from '@/lib/utils';
@@ -18,10 +17,7 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
 
   if (!open) return null;
 
-  const groups = sidebarGroups
-    .map(g => ({ ...g, items: g.items.filter(i => temPermissao(i.permissao)) }))
-    .filter(g => g.items.length > 0);
-
+  const items = menuItems.filter(i => temPermissao(i.permissao));
   const caixaAberto = caixa?.status === 'aberto';
 
   return (
@@ -43,43 +39,24 @@ export function MobileDrawer({ open, onClose }: MobileDrawerProps) {
           Caixa {caixaAberto ? 'Aberto' : 'Fechado'}
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-3 overflow-y-auto">
-          {groups.map((g, gi) => (
-            <DrawerGroup key={gi} group={g} onClose={onClose} />
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          {items.map((item) => (
+            <NavLink key={item.path} to={item.path} onClick={onClose}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-colors min-h-[44px]',
+                  isActive
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'text-muted-foreground hover:bg-muted'
+                )
+              }>
+              <item.icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
+              {item.label}
+            </NavLink>
           ))}
         </nav>
         <SidebarUserFooter />
       </div>
-    </div>
-  );
-}
-
-function DrawerGroup({ group, onClose }: { group: typeof sidebarGroups[0]; onClose: () => void }) {
-  const [open, setOpen] = useState(group.defaultOpen);
-
-  return (
-    <div>
-      <button onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 w-full px-3 py-1.5 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
-        <group.icon className="h-3 w-3" />
-        <span className="flex-1 text-left">{group.label}</span>
-        <ChevronDown className={cn('h-3 w-3 transition-transform', open && 'rotate-180')} />
-      </button>
-      {open && (
-        <div className="space-y-0.5">
-          {group.items.map((item) => (
-            <NavLink key={item.path} to={item.path} onClick={onClose}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                  isActive ? 'bg-accent-light text-primary font-semibold' : 'text-muted-foreground hover:bg-muted'
-                }`
-              }>
-              <item.icon className={cn("h-[18px] w-[18px]")} strokeWidth={1.75} />
-              {item.label}
-            </NavLink>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
