@@ -2,6 +2,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge';
 import { MoneyDisplay } from '@/components/shared/MoneyDisplay';
 import { PlacaBadge } from '@/components/shared/PlacaBadge';
 import { formatarDataCurta, formatarNumeroOS } from '@/lib/formatters';
+import { formatarVeiculo } from '@/lib/veiculoUtils';
 import { Bike, Car } from 'lucide-react';
 import type { OrdemServico, StatusOS } from '@/types/database';
 
@@ -30,15 +31,15 @@ export function OSListDesktop({ ordens, onVer }: Props) {
             const moto = os.motos as unknown as Record<string, string> | undefined;
             const cliente = os.clientes as unknown as Record<string, string> | undefined;
             const func = os.funcionarios as unknown as Record<string, string> | undefined;
-            const Icon = Bike;
+            const veiculoLabel = formatarVeiculo(moto);
             return (
               <tr key={os.id} onClick={() => onVer(os.id)} className="border-t border-border hover:bg-muted/30 cursor-pointer transition-colors">
                 <td className="px-4 py-3 font-mono text-sm text-accent font-semibold">{formatarNumeroOS(os.numero)}</td>
                 <td className="px-4 py-3 text-sm text-foreground">{cliente?.nome ?? '—'}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1.5">
-                    <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-sm text-foreground">{moto?.marca} {moto?.modelo}</span>
+                    <Bike className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-sm text-foreground">{veiculoLabel}</span>
                     {moto?.placa && <PlacaBadge placa={moto.placa} />}
                   </div>
                 </td>
