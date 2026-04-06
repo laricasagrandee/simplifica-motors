@@ -44,6 +44,7 @@ export function MobileNav() {
             <div className="w-[62px] h-[62px] rounded-full bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-lg shadow-emerald-500/30 flex items-center justify-center active:scale-90 transition-transform ring-4 ring-white">
               <Plus className="h-7 w-7" strokeWidth={2.5} />
             </div>
+            <span className="text-[10px] font-medium text-muted-foreground mt-0.5">Nova OS</span>
           </button>
 
           {rightItems.map((item) => {

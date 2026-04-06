@@ -60,12 +60,11 @@ export default function PDVPage() {
   }, []);
 
   const confirmarPagamento = async (clienteId: string | null, forma: FormaPagamento, parcelas: number) => {
-    const itensReais = itens.filter(i => !i.peca_id.startsWith('avulso-'));
     const itensAvulsos = itens.filter(i => i.peca_id.startsWith('avulso-'));
     
     await criarVenda.mutateAsync({
       cliente_id: clienteId,
-      itens: itensReais.map((i) => ({ peca_id: i.peca_id, quantidade: i.quantidade, valor_unitario: i.valor_unitario })),
+      itens: itens.map((i) => ({ peca_id: i.peca_id, quantidade: i.quantidade, valor_unitario: i.valor_unitario })),
       desconto: descontoReais, forma_pagamento: forma, parcelas, valor_total: total,
       observacao: itensAvulsos.length > 0 ? `Itens avulsos: ${itensAvulsos.map(i => `${i.nome} R$${i.valor_unitario}`).join(', ')}` : undefined,
     });

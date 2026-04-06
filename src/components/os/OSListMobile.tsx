@@ -26,7 +26,7 @@ export function OSListMobile({ ordens, onVer }: Props) {
             </div>
             <p className="text-sm font-medium text-foreground">{cliente?.nome ?? '—'}</p>
             <div className="flex items-center gap-1.5 mt-1">
-              <Bike className="h-3.5 w-3.5 text-muted-foreground" />
+              {moto?.tipo_veiculo === 'carro' ? <Car className="h-3.5 w-3.5 text-muted-foreground" /> : <Bike className="h-3.5 w-3.5 text-muted-foreground" />}
               <span className="text-xs text-muted-foreground">{veiculoLabel}</span>
               {moto?.placa && <PlacaBadge placa={moto.placa} />}
             </div>
