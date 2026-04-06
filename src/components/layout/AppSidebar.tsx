@@ -59,7 +59,7 @@ export function AppSidebar() {
     const isActive = item.path === '/dashboard'
       ? location.pathname === '/dashboard'
       : location.pathname.startsWith(item.path);
-    const badge = item.path === '/os' ? (osCount ?? 0) : undefined;
+    const badge = undefined;
     const isFinanceiro = item.path === '/financeiro';
 
     return (
