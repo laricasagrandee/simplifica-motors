@@ -7,7 +7,7 @@ import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { FORMAS_PAGAMENTO } from '@/lib/constants';
@@ -31,15 +31,20 @@ export function MovimentacaoForm({ open, onClose, onSalvar }: Props) {
   const [data, setData] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [dataVenc, setDataVenc] = useState('');
   const [pago, setPago] = useState(true);
+  const [maisDetalhes, setMaisDetalhes] = useState(false);
 
   const cats = tipo === 'entrada' ? CATEGORIAS_ENTRADA : CATEGORIAS_SAIDA;
   const catOptions = cats.map((c) => ({ value: c, label: CATEGORIAS_LABELS[c] ?? c }));
 
   const handleSalvar = () => {
-    if (!categoria || !descricao || !valor) return;
+    if (!descricao.trim() || !valor) return;
     onSalvar({
-      tipo, categoria, descricao, valor: parseFloat(valor),
-      forma_pagamento: formaPgto, data,
+      tipo, 
+      categoria: categoria || 'outros', 
+      descricao, 
+      valor: parseFloat(valor),
+      forma_pagamento: formaPgto, 
+      data,
       data_vencimento: dataVenc || undefined,
       pago,
     });
@@ -51,41 +56,54 @@ export function MovimentacaoForm({ open, onClose, onSalvar }: Props) {
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Nova Movimentação</DialogTitle></DialogHeader>
         <div className="space-y-4">
+          {/* Tipo - obrigatório */}
           <div className="flex gap-2">
-            <Button variant={tipo === 'entrada' ? 'default' : 'outline'} className={tipo === 'entrada' ? 'bg-success text-white' : ''} onClick={() => setTipo('entrada')}>Entrada</Button>
-            <Button variant={tipo === 'saida' ? 'default' : 'outline'} className={tipo === 'saida' ? 'bg-destructive text-white' : ''} onClick={() => setTipo('saida')}>Saída</Button>
+            <Button variant={tipo === 'entrada' ? 'default' : 'outline'} className={cn('flex-1 min-h-[48px] text-base', tipo === 'entrada' && 'bg-emerald-600 hover:bg-emerald-700 text-white')} onClick={() => setTipo('entrada')}>Entrada</Button>
+            <Button variant={tipo === 'saida' ? 'default' : 'outline'} className={cn('flex-1 min-h-[48px] text-base', tipo === 'saida' && 'bg-destructive hover:bg-destructive/90 text-white')} onClick={() => setTipo('saida')}>Saída</Button>
           </div>
 
-          <div><Label>Categoria</Label>
-            <SearchableSelect value={categoria} onValueChange={setCategoria} options={catOptions} placeholder="Selecione" />
+          {/* Valor - obrigatório, com foco */}
+          <div><Label>Valor (R$) *</Label>
+            <Input type="number" step="0.01" value={valor} onChange={e => setValor(e.target.value)} placeholder="0,00" className="min-h-[48px] font-mono text-lg" autoFocus />
           </div>
 
-          <div><Label>Descrição</Label>
-            <Input value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Descrição..." className="min-h-[44px]" />
+          {/* Descrição - obrigatório */}
+          <div><Label>Descrição *</Label>
+            <Input value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Ex: Compra de peças" className="min-h-[44px]" />
           </div>
 
-          <div><Label>Valor (R$)</Label>
-            <Input type="number" step="0.01" value={valor} onChange={e => setValor(e.target.value)} placeholder="0,00" className="min-h-[44px] font-mono" />
-          </div>
+          {/* Mais detalhes - expansível */}
+          <button onClick={() => setMaisDetalhes(!maisDetalhes)} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">
+            {maisDetalhes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {maisDetalhes ? 'Menos detalhes' : 'Mais detalhes'}
+          </button>
 
-          <div><Label>Forma de Pagamento</Label>
-            <SearchableSelect value={formaPgto} onValueChange={v => setFormaPgto(v as FormaPagamento)} options={formaOptions} placeholder="Selecione" />
-          </div>
+          {maisDetalhes && (
+            <div className="space-y-4 border-t border-border pt-4">
+              <div><Label>Categoria</Label>
+                <SearchableSelect value={categoria} onValueChange={setCategoria} options={catOptions} placeholder="Outros" />
+              </div>
 
-          <div><Label>Data</Label>
-            <DatePick value={data} onChange={setData} />
-          </div>
+              <div><Label>Forma de Pagamento</Label>
+                <SearchableSelect value={formaPgto} onValueChange={v => setFormaPgto(v as FormaPagamento)} options={formaOptions} placeholder="Dinheiro" />
+              </div>
 
-          <div><Label>Data de Vencimento (opcional)</Label>
-            <DatePick value={dataVenc} onChange={setDataVenc} />
-          </div>
+              <div><Label>Data</Label>
+                <DatePick value={data} onChange={setData} />
+              </div>
 
-          <div className="flex items-center gap-3">
-            <Switch checked={pago} onCheckedChange={setPago} />
-            <Label>Já foi pago?</Label>
-          </div>
+              <div><Label>Data de Vencimento</Label>
+                <DatePick value={dataVenc} onChange={setDataVenc} />
+              </div>
 
-          <Button onClick={handleSalvar} className="w-full min-h-[44px] bg-accent text-accent-foreground" disabled={!categoria || !descricao || !valor}>
+              <div className="flex items-center gap-3">
+                <Switch checked={pago} onCheckedChange={setPago} />
+                <Label>Já foi pago?</Label>
+              </div>
+            </div>
+          )}
+
+          <Button onClick={handleSalvar} className="w-full min-h-[48px] text-base" disabled={!descricao.trim() || !valor}>
             Registrar Movimentação
           </Button>
         </div>
