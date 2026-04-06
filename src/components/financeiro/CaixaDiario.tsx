@@ -6,7 +6,7 @@ import { MoneyDisplay } from '@/components/shared/MoneyDisplay';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { formatarDataCurta } from '@/lib/formatters';
+import { formatarDataCurta, formatarMoeda } from '@/lib/formatters';
 import { Lock, Unlock, ClipboardList } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
