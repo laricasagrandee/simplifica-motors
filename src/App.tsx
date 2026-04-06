@@ -80,11 +80,11 @@ const App = () => (
                 <Route path="/agendamentos" element={<ProtectedRoute permissao="gerenciar_os"><AgendamentosPage /></ProtectedRoute>} />
                 <Route path="/pdv" element={<ProtectedRoute permissao="usar_pdv"><PDVPage /></ProtectedRoute>} />
                 <Route path="/financeiro" element={<ProtectedRoute permissao="ver_financeiro"><FinanceiroPage /></ProtectedRoute>} />
-                <Route path="/cmv" element={<ProtectedRoute permissao="ver_cmv"><CMVPage /></ProtectedRoute>} />
-                <Route path="/dre" element={<ProtectedRoute permissao="ver_dre"><DREPage /></ProtectedRoute>} />
+                <Route path="/cmv" element={<Navigate to="/relatorios" replace />} />
+                <Route path="/dre" element={<Navigate to="/relatorios" replace />} />
+                <Route path="/nf" element={<Navigate to="/financeiro" replace />} />
                 <Route path="/relatorios" element={<ProtectedRoute permissao="ver_relatorios"><RelatoriosPage /></ProtectedRoute>} />
                 <Route path="/funcionarios" element={<ProtectedRoute permissao="gerenciar_equipe"><FuncionariosPage /></ProtectedRoute>} />
-                <Route path="/nf" element={<ProtectedRoute permissao="emitir_nf"><NFPage /></ProtectedRoute>} />
                 <Route path="/configuracoes" element={<ProtectedRoute permissao="ver_configuracoes"><ConfiguracoesPage /></ProtectedRoute>} />
                 <Route path="/planos" element={<ProtectedRoute permissao="gerenciar_planos"><PlanosPage /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
