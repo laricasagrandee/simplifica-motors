@@ -34,10 +34,15 @@ export function AlertsList({ data, loading }: AlertsListProps) {
       ) : (
         <div className="space-y-2">
           {data.map((a, i) => {
-            const config = ICON_MAP[a.tipo];
+            const config = ICON_MAP[a.tipo] ?? ICON_MAP.estoque;
+            const IconComp = config.icon;
             return (
               <div key={i} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
-                <config.icon className={`h-4 w-4 mt-0.5 ${config.color} shrink-0`} strokeWidth={1.75} />
+                <IconComp className={`h-4 w-4 mt-0.5 ${config.color} shrink-0`} strokeWidth={1.75} />
+                <p className="text-sm text-foreground">{a.mensagem}</p>
+              </div>
+            );
+          })}
                 <p className="text-sm text-foreground">{a.mensagem}</p>
               </div>
             );
