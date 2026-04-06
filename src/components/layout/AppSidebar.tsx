@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { SidebarUserFooter } from './SidebarUserFooter';
 import { NotificacoesBadge } from '@/components/shared/NotificacoesBadge';
+import { GlobalSearch } from '@/components/shared/GlobalSearch';
 import { useAuthContext } from './AuthProvider';
 import type { Acao } from '@/lib/permissions';
 import { useState } from 'react';
@@ -124,6 +125,9 @@ export function AppSidebar() {
           <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mt-0.5">Gestão de Oficina</p>
         </div>
         <NotificacoesBadge />
+      </div>
+      <div className="px-3 pt-3">
+        <GlobalSearch />
       </div>
       <nav className="flex-1 px-3 py-4 space-y-3 overflow-y-auto">
         {groups.map((g, i) => (
