@@ -125,16 +125,19 @@ export function CaixaDiario({ caixa, loading, historico, onAbrir, onFechar }: Pr
             <Button variant="outline" className="w-full min-h-[44px] border-destructive text-destructive" onClick={() => setConfirmFechar(true)}>Fechar Caixa</Button>
           </div>
         ) : (
-          <div className="px-6 pb-4 space-y-2">
-            <p className="text-sm text-muted-foreground text-center">Caixa fechado.</p>
+          <div className="px-6 pb-4 space-y-3">
+            <div className="bg-warning-light border border-warning-border rounded-lg p-4 text-center space-y-1">
+              <p className="text-sm font-semibold text-warning">Caixa fechado</p>
+              <p className="text-xs text-muted-foreground">Fechou sem querer? Reabra o caixa do dia.</p>
+            </div>
             <div className="flex gap-2 justify-center items-end max-w-xs mx-auto">
               <div className="flex-1">
                 <Input type="number" step="0.01" placeholder="Saldo de abertura" value={saldoAbertura}
                   onChange={e => setSaldoAbertura(e.target.value)} className="min-h-[44px] font-mono" />
               </div>
               <Button onClick={() => { onAbrir(parseFloat(saldoAbertura) || 0); setSaldoAbertura(''); }}
-                className="min-h-[44px] bg-accent text-accent-foreground gap-2">
-                <Unlock className="h-4 w-4" /> Reabrir Caixa
+                className="min-h-[44px] bg-accent text-accent-foreground gap-2 font-semibold">
+                <Unlock className="h-5 w-5" /> Reabrir Caixa
               </Button>
             </div>
           </div>
