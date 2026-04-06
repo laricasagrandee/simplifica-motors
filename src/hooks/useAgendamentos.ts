@@ -39,8 +39,8 @@ export function useCriarAgendamento() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (ag: {
-      cliente_id: string;
-      veiculo_id: string;
+      cliente_id?: string;
+      veiculo_id?: string;
       descricao: string;
       data_hora: string;
       duracao_minutos: number;
