@@ -54,11 +54,15 @@ export function GlobalSearch() {
     setLoading(true);
     const items: SearchResult[] = [];
     const ql = `%${q}%`;
+    const isNumeric = /^\d+$/.test(q);
 
-    const [clientes, veiculos, os, pecas] = await Promise.all([
+    const [clientes, veiculos, os, osByNum, pecas] = await Promise.all([
       supabase.from('clientes').select('id, nome, telefone').or(`nome.ilike.${ql},telefone.ilike.${ql}`).limit(3),
       supabase.from('motos').select('id, marca, modelo, placa, cliente_id').or(`placa.ilike.${ql},modelo.ilike.${ql},marca.ilike.${ql}`).limit(3),
       supabase.from('ordens_servico').select('id, numero').or(`numero::text.ilike.${ql}`).limit(3),
+      isNumeric
+        ? supabase.from('ordens_servico').select('id, numero').eq('numero', parseInt(q)).limit(3)
+        : Promise.resolve({ data: [] }),
       supabase.from('pecas').select('id, nome, codigo').or(`nome.ilike.${ql},codigo.ilike.${ql}`).limit(3),
     ]);
 
@@ -69,16 +73,22 @@ export function GlobalSearch() {
       tipo: 'veiculo', id: v.id, titulo: [v.marca, v.modelo].filter(Boolean).join(' ') || 'Veículo',
       subtitulo: v.placa || undefined, link: `/clientes/${v.cliente_id}`,
     }));
-    (os.data ?? []).forEach(o => items.push({
+    
+    // Merge OS results and deduplicate
+    const osMap = new Map<string, { id: string; numero: number }>();
+    (os.data ?? []).forEach(o => osMap.set(o.id, o));
+    (osByNum.data ?? []).forEach(o => osMap.set(o.id, o));
+    Array.from(osMap.values()).forEach(o => items.push({
       tipo: 'os', id: o.id, titulo: `OS-${String(o.numero).padStart(4, '0')}`, link: `/os/${o.id}`,
     }));
+
     (pecas.data ?? []).forEach(p => items.push({
       tipo: 'peca', id: p.id, titulo: p.nome, subtitulo: p.codigo || undefined, link: '/pecas',
     }));
 
     setResults(items);
     setLoading(false);
-    setOpen(items.length > 0);
+    setOpen(true);
   };
 
   const handleSelect = (r: SearchResult) => {
@@ -116,9 +126,9 @@ export function GlobalSearch() {
         <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-50 max-h-80 overflow-y-auto">
           {loading ? (
             <p className="p-3 text-sm text-muted-foreground text-center">Buscando...</p>
-          ) : Object.keys(grouped).length === 0 ? (
-            <p className="p-3 text-sm text-muted-foreground text-center">Nenhum resultado</p>
-          ) : (
+           ) : Object.keys(grouped).length === 0 ? (
+             <p className="p-4 text-sm text-muted-foreground text-center">Nenhum resultado pra "<span className="font-medium text-foreground">{query.trim()}</span>"</p>
+           ) : (
             Object.entries(grouped).map(([tipo, items]) => {
               const Icon = ICONS[tipo as keyof typeof ICONS];
               return (

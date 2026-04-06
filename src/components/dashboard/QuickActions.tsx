@@ -31,7 +31,7 @@ export function QuickActions() {
         return (
           <button
             key={a.path}
-            onClick={() => navigate(a.path)}
+            onClick={() => navigate(isCaixa ? '/financeiro?tab=caixa' : a.path)}
             className={cn(
               'group relative flex flex-col items-center justify-center gap-3 rounded-xl border bg-card p-5 transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]',
               'min-h-[110px] sm:min-h-[120px]',

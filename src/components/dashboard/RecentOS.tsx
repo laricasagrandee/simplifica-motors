@@ -3,6 +3,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge';
 import { MoneyDisplay } from '@/components/shared/MoneyDisplay';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowRight } from 'lucide-react';
+import { ClipboardList } from 'lucide-react';
 import type { StatusOS } from '@/types/database';
 import type { OSRecente } from '@/hooks/useDashboardOS';
 
@@ -38,7 +39,13 @@ export function RecentOS({ data, loading }: RecentOSProps) {
           {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
         </div>
       ) : data.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-8 px-5">Nenhuma OS registrada</p>
+        <div className="flex flex-col items-center justify-center py-10 px-5 gap-3">
+          <ClipboardList className="h-10 w-10 text-muted-foreground/40" strokeWidth={1.5} />
+          <div className="text-center space-y-1">
+            <p className="text-sm font-medium text-muted-foreground">Nenhuma OS registrada ainda</p>
+            <p className="text-xs text-muted-foreground/70">Clique em <button onClick={() => navigate('/os/rapida')} className="text-primary font-semibold hover:underline">Abrir OS Rápida</button> pra começar!</p>
+          </div>
+        </div>
       ) : (
         <div className="divide-y divide-border">
           {data.map((os) => {

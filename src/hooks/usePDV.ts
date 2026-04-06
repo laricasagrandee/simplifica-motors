@@ -38,7 +38,8 @@ export function useCriarVenda() {
         .single();
       if (vendaErr) throw vendaErr;
 
-      const itens = input.itens.map((i) => ({
+      const itensReais = input.itens.filter(i => !i.peca_id.startsWith('avulso-'));
+      const itens = itensReais.map((i) => ({
         venda_id: venda.id,
         peca_id: i.peca_id,
         descricao: '',
@@ -47,10 +48,13 @@ export function useCriarVenda() {
         valor_total: sanitizeMonetary(i.quantidade * i.valor_unitario),
       }));
 
-      const { error: itensErr } = await supabase.from('vendas_pdv_itens').insert(itens);
-      if (itensErr) throw itensErr;
+      if (itens.length > 0) {
+        const { error: itensErr } = await supabase.from('vendas_pdv_itens').insert(itens);
+        if (itensErr) throw itensErr;
+      }
 
       for (const item of input.itens) {
+        if (item.peca_id.startsWith('avulso-')) continue;
         const { data: peca } = await supabase
           .from('pecas')
           .select('estoque_atual')
