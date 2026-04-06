@@ -1,11 +1,16 @@
-import { AlertTriangle, Clock, CheckCircle } from 'lucide-react';
+import { AlertTriangle, Clock, CheckCircle, Cake, ShieldCheck, FileQuestion, PackageCheck, Wrench } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Alerta } from '@/hooks/useDashboardAlertas';
 
-const ICON_MAP = {
+const ICON_MAP: Record<string, { icon: React.ComponentType<any>; color: string }> = {
   estoque: { icon: AlertTriangle, color: 'text-warning' },
   os_atrasada: { icon: Clock, color: 'text-danger' },
   pagamento: { icon: AlertTriangle, color: 'text-warning' },
+  aniversario: { icon: Cake, color: 'text-info' },
+  garantia: { icon: ShieldCheck, color: 'text-purple' },
+  orcamento_pendente: { icon: FileQuestion, color: 'text-warning' },
+  aguardando_retirada: { icon: PackageCheck, color: 'text-accent' },
+  execucao_longa: { icon: Wrench, color: 'text-danger' },
 };
 
 interface AlertsListProps {
