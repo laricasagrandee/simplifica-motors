@@ -2,20 +2,10 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, ClipboardList, Wallet, Menu, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { MobileDrawer } from './MobileDrawer';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-
-function useOSPendentesCount() {
-  return useQuery({ queryKey: ['os-abertas-count'], queryFn: async () => {
-    const { count } = await supabase.from('ordens_servico').select('id', { count: 'exact', head: true })
-      .in('status', ['aberta', 'em_execucao', 'em_orcamento', 'aprovada']);
-    return count ?? 0;
-  }, refetchInterval: 60000 });
-}
 
 const navItems = [
   { label: 'Início', icon: LayoutDashboard, path: '/dashboard' },
-  { label: 'OS', icon: ClipboardList, path: '/os', hasBadge: true },
+  { label: 'OS', icon: ClipboardList, path: '/os' },
 ];
 
 const rightItems = [
@@ -26,9 +16,8 @@ export function MobileNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { data: osCount } = useOSPendentesCount();
 
-  const renderItem = (item: typeof navItems[0] & { hasBadge?: boolean }) => {
+  const renderItem = (item: typeof navItems[0]) => {
     const isActive = item.path === '/dashboard'
       ? location.pathname === '/dashboard'
       : location.pathname.startsWith(item.path);
@@ -36,11 +25,6 @@ export function MobileNav() {
       <NavLink key={item.path} to={item.path}
         className={`flex flex-col items-center gap-0.5 text-[10px] font-medium relative ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
         <item.icon className="h-6 w-6" strokeWidth={1.75} />
-        {item.hasBadge && osCount != null && osCount > 0 && (
-          <span className="absolute -top-1 -right-2.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-sm">
-            {osCount}
-          </span>
-        )}
         {item.label}
         {isActive && <span className="w-1 h-1 rounded-full bg-primary mt-0.5" />}
       </NavLink>
@@ -53,7 +37,6 @@ export function MobileNav() {
         <nav className="flex items-end justify-around h-16 px-2 pb-[max(4px,env(safe-area-inset-bottom))]">
           {navItems.map(renderItem)}
 
-          {/* Central green + button */}
           <button
             onClick={() => navigate('/os/rapida')}
             className="flex flex-col items-center -mt-7"
@@ -87,3 +70,4 @@ export function MobileNav() {
     </>
   );
 }
+
