@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Printer } from 'lucide-react';
 import { OSInfoCard } from './OSInfoCard';
 import { OSProblemaCard } from './OSProblemaCard';
 import { OSMecanicoSelect } from './OSMecanicoSelect';
@@ -19,6 +21,8 @@ import { useAtualizarOS } from '@/hooks/useOSDetalhe';
 import { useItensPorOS, useAdicionarPeca, useAdicionarServico, useRemoverItem } from '@/hooks/useOSItens';
 import { useFotosPorOS, useUploadFoto, useRemoverFoto } from '@/hooks/useOSFotos';
 import { useAtualizarChecklist } from '@/hooks/useOSChecklist';
+import { useConfiguracoes } from '@/hooks/useConfiguracoes';
+import { gerarPdfOrcamento } from '@/lib/gerarPdfOS';
 import { toast } from 'sonner';
 import type { OrdemServico, Cliente, Veiculo, ChecklistItem, StatusOS } from '@/types/database';
 
