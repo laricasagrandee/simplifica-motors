@@ -110,6 +110,13 @@ export function OSDetalheTabs({ os, onMudarStatus, mudarStatusLoading }: Props) 
             onMudar={async (id) => { await atualizar.mutateAsync({ id: os.id, mecanico_id: id }); }} />
         </TabsContent>
         <TabsContent value="orcamento">
+          {(itens ?? []).length > 0 && configData && (
+            <div className="flex justify-end mb-3">
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => gerarPdfOrcamento(os, itens ?? [], configData)}>
+                <Printer className="h-3.5 w-3.5" /> Imprimir Orçamento
+              </Button>
+            </div>
+          )}
           <OSItensTab itens={itens ?? []} loading={itensLoading}
             valorPecas={valorPecas} valorMaoObra={valorMaoObra} desconto={os.desconto ?? 0} valorTotal={valorTotal}
             onAdicionarPeca={() => setPecaOpen(true)} onAdicionarServico={() => setServicoOpen(true)}
