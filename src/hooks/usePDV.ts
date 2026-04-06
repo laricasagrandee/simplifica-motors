@@ -52,7 +52,6 @@ export function useCriarVenda() {
         const { error: itensErr } = await supabase.from('vendas_pdv_itens').insert(itens);
         if (itensErr) throw itensErr;
       }
-      if (itensErr) throw itensErr;
 
       for (const item of input.itens) {
         if (item.peca_id.startsWith('avulso-')) continue;
