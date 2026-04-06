@@ -34,7 +34,7 @@ export function OSContadores({ contadores, loading, statusFiltro, onStatusClick 
   );
 
   return (
-    <div className="flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
+    <div className="flex gap-2 mb-4 overflow-x-auto pb-2 pr-4 scrollbar-hide">
       {ITEMS.map((item) => {
         const count = contadores?.[item.countKey] ?? 0;
         if (item.key !== '' && count === 0) return null;
