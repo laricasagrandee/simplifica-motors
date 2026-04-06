@@ -1,0 +1,89 @@
+import { useState } from 'react';
+import { FileEdit, Send, Wrench, Clock, DollarSign, CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { validarTransicaoOS } from '@/lib/osValidations';
+import { useConfiguracoes } from '@/hooks/useConfiguracoes';
+import { OrcamentoPreviewDialog } from './OrcamentoPreviewDialog';
+import { toast } from 'sonner';
+import type { OrdemServico, OSItem, StatusOS } from '@/types/database';
+
+interface Props {
+  os: OrdemServico;
+  itens?: OSItem[];
+  onMudarStatus: (status: StatusOS) => Promise<void>;
+  onTabChange: (tab: string) => void;
+  loading: boolean;
+}
+
+const configs: Record<string, {
+  icon: React.ElementType; bg: string; border: string; text: string;
+}> = {
+  aberta: { icon: FileEdit, bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800' },
+  em_orcamento: { icon: Send, bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-800' },
+  aprovada: { icon: Wrench, bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-800' },
+  em_execucao: { icon: Clock, bg: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-800' },
+  concluida: { icon: DollarSign, bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800' },
+  entregue: { icon: CheckCircle, bg: 'bg-muted', border: 'border', text: 'text-muted-foreground' },
+};
+
+function getMsg(os: OrdemServico) {
+  const pago = !!os.forma_pagamento;
+  const msgs: Record<string, string> = {
+    aberta: 'Monte o orçamento: adicione peças e serviços na aba Orçamento',
+    em_orcamento: 'Orçamento enviado! Aguarde o cliente aprovar',
+    aprovada: 'Cliente aprovou! Pode começar o serviço',
+    em_execucao: 'Serviço em andamento. Quando terminar, clique em Serviço Pronto',
+    concluida: pago ? 'Serviço pronto! Entregue o veículo ao cliente' : 'Serviço pronto! Registre o pagamento e entregue o veículo',
+    entregue: 'Tudo certo! OS finalizada com sucesso',
+  };
+  return msgs[os.status] ?? '';
+}
+
+export function OSProximoPasso({ os, itens = [], onMudarStatus, onTabChange, loading }: Props) {
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const cfg = configs[os.status];
+  if (!cfg) return null;
+  const { data: config } = useConfiguracoes();
+  const Icon = cfg.icon;
+  const telefone = os.clientes?.telefone?.replace(/\D/g, '');
+  const nomeOficina = config?.nome_fantasia ?? 'Nossa Oficina';
+  const pago = !!os.forma_pagamento;
+
+  const handleMudar = async (status: StatusOS) => {
+    const v = validarTransicaoOS(os, itens, status);
+    if (!v.valido) { toast.error(v.mensagem); return; }
+    await onMudarStatus(status);
+  };
+
+  return (
+    <>
+      <div className={`${cfg.bg} ${cfg.border} border rounded-lg p-4 mb-4 flex flex-col sm:flex-row items-start sm:items-center gap-3`}>
+        <Icon className={`h-5 w-5 shrink-0 ${cfg.text}`} />
+        <p className={`text-sm font-medium ${cfg.text} flex-1`}>{getMsg(os)}</p>
+        <div className="flex flex-wrap gap-2">
+          {os.status === 'aberta' && <Button size="sm" variant="outline" onClick={() => onTabChange('orcamento')}>Ir para Orçamento</Button>}
+          {os.status === 'em_orcamento' && (
+            <>
+              {telefone && (
+                <Button size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>Enviar via WhatsApp</Button>
+              )}
+              <Button size="sm" onClick={() => handleMudar('aprovada')} disabled={loading || itens.length === 0}>Cliente Aprovou ✅</Button>
+            </>
+          )}
+          {os.status === 'aprovada' && (
+            <Button size="sm" onClick={() => handleMudar('em_execucao')} disabled={loading}>Começar Serviço 🔧</Button>
+          )}
+          {os.status === 'em_execucao' && <Button size="sm" onClick={() => handleMudar('concluida')} disabled={loading}>Serviço Pronto ✔️</Button>}
+          {os.status === 'concluida' && !pago && <Button size="sm" onClick={() => onTabChange('pagamento')}>Registrar Pagamento</Button>}
+          {os.status === 'concluida' && pago && <Button size="sm" onClick={() => handleMudar('entregue')} disabled={loading}>Cliente Pagou e Retirou 🚗</Button>}
+          {os.status === 'entregue' && telefone && (
+            <Button size="sm" variant="outline" asChild>
+              <a href={`https://wa.me/55${telefone}?text=${encodeURIComponent('Obrigado pela preferência! Como foi sua experiência?')}`} target="_blank" rel="noreferrer">Enviar Pesquisa</a>
+            </Button>
+          )}
+        </div>
+      </div>
+      <OrcamentoPreviewDialog open={previewOpen} onClose={() => setPreviewOpen(false)} os={os} itens={itens} nomeOficina={nomeOficina} />
+    </>
+  );
+}

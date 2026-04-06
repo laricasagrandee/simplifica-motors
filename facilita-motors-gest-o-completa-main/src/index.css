@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 228 45% 16%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 228 45% 16%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 228 45% 16%;
+
+    --primary: 160 40% 30%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 16% 96%;
+    --secondary-foreground: 228 45% 16%;
+
+    --muted: 220 16% 96%;
+    --muted-foreground: 228 14% 45%;
+
+    --accent: 30 42% 59%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 5 58% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 216 24% 92%;
+    --input: 216 24% 92%;
+    --ring: 160 40% 30%;
+
+    --radius: 0.75rem;
+
+    /* Custom tokens */
+    --surface-secondary: 220 16% 96%;
+    --border-hover: 216 16% 84%;
+    --text-primary: 228 45% 16%;
+    --text-secondary: 230 14% 45%;
+    --text-muted: 225 14% 66%;
+
+    --accent-green: 160 40% 30%;
+    --accent-green-hover: 160 42% 22%;
+    --accent-green-light: 160 40% 94%;
+    --accent-green-border: 160 30% 78%;
+
+    --accent-gold: 30 42% 59%;
+    --accent-border: 30 30% 78%;
+
+    --success: 153 46% 33%;
+    --success-light: 153 40% 94%;
+    --success-border: 153 30% 78%;
+
+    --warning: 30 54% 50%;
+    --warning-light: 38 80% 95%;
+    --warning-border: 38 50% 80%;
+
+    --danger: 5 58% 50%;
+    --danger-light: 5 60% 96%;
+    --danger-border: 5 40% 82%;
+
+    --info: 214 54% 50%;
+    --info-light: 214 60% 96%;
+    --info-border: 214 40% 82%;
+
+    --purple: 262 48% 53%;
+    --purple-light: 262 50% 96%;
+    --purple-border: 262 30% 82%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 228 45% 16%;
+    --sidebar-primary: 160 40% 30%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 160 40% 94%;
+    --sidebar-accent-foreground: 160 40% 30%;
+    --sidebar-border: 216 24% 92%;
+    --sidebar-ring: 160 40% 30%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer utilities {
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-md hover:-translate-y-px;
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 300ms ease-out forwards;
+}
+
+.animate-fade-in-delay-1 { animation-delay: 50ms; }
+.animate-fade-in-delay-2 { animation-delay: 100ms; }
+.animate-fade-in-delay-3 { animation-delay: 150ms; }
+.animate-fade-in-delay-4 { animation-delay: 200ms; }
