@@ -20,11 +20,8 @@ import OSRapidaPage from "./pages/OSRapidaPage";
 import OSDetalhePage from "./pages/OSDetalhePage";
 import PDVPage from "./pages/PDVPage";
 import FinanceiroPage from "./pages/FinanceiroPage";
-import CMVPage from "./pages/CMVPage";  // kept for potential direct use
-import DREPage from "./pages/DREPage";  // kept for potential direct use
 import RelatoriosPage from "./pages/RelatoriosPage";
 import FuncionariosPage from "./pages/FuncionariosPage";
-import NFPage from "./pages/NFPage";
 import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import PlanosPage from "./pages/PlanosPage";
 import AgendamentosPage from "./pages/AgendamentosPage";
