@@ -63,6 +63,7 @@ export function OSDetalheTabs({ os, onMudarStatus, mudarStatusLoading }: Props) 
   const [servicoOpen, setServicoOpen] = useState(false);
 
   const qc = useQueryClient();
+  const { data: configData } = useConfiguracoes();
   const atualizar = useAtualizarOS();
   const { data: itens, isLoading: itensLoading } = useItensPorOS(os.id);
   const addPeca = useAdicionarPeca();
