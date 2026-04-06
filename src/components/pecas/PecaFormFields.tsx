@@ -1,7 +1,7 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/ui/searchable-select';
-import { CATEGORIAS_PECAS } from '@/lib/constants';
+import { useCategoriasPecas } from '@/hooks/useCategoriasPecas';
 
 interface Props {
   form: Record<string, string>;
@@ -10,10 +10,11 @@ interface Props {
 }
 
 const UNIDADES = ['un', 'litro', 'metro', 'kit'];
-const categoriaOptions = Object.entries(CATEGORIAS_PECAS).map(([k, v]) => ({ value: k, label: v }));
 const unidadeOptions = UNIDADES.map((u) => ({ value: u, label: u }));
 
 export function PecaFormFields({ form, errors, onChange }: Props) {
+  const { options: categoriaOptions } = useCategoriasPecas();
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

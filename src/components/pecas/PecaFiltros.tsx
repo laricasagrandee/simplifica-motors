@@ -2,7 +2,7 @@ import { SearchInput } from '@/components/shared/SearchInput';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { CATEGORIAS_PECAS } from '@/lib/constants';
+import { useCategoriasPecas } from '@/hooks/useCategoriasPecas';
 
 interface Props {
   busca: string;
@@ -13,12 +13,10 @@ interface Props {
   onAlertaChange: (v: boolean) => void;
 }
 
-const categoriaOptions = [
-  { value: 'all', label: 'Todas' },
-  ...Object.entries(CATEGORIAS_PECAS).map(([k, v]) => ({ value: k, label: v })),
-];
-
 export function PecaFiltros({ busca, categoria, apenasAlerta, onBuscaChange, onCategoriaChange, onAlertaChange }: Props) {
+  const { options } = useCategoriasPecas();
+  const categoriaOptions = [{ value: 'all', label: 'Todas' }, ...options];
+
   return (
     <div className="flex flex-col sm:flex-row gap-3 mb-4">
       <SearchInput placeholder="Buscar por nome ou código..." onSearch={onBuscaChange} className="flex-1" />
