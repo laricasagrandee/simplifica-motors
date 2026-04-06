@@ -6,6 +6,7 @@ import { useAlertasDashboard, type Alerta } from '@/hooks/useDashboardAlertas';
 import { cn } from '@/lib/utils';
 
 const DISMISSED_ALERTS_KEY = 'dismissed-dashboard-alertas';
+const DISMISSED_ALERTS_EVENT = 'dismissed-dashboard-alertas-changed';
 
 const iconMap: Record<Alerta['tipo'], typeof AlertTriangle> = {
   estoque: AlertTriangle,
@@ -49,6 +50,7 @@ function readDismissedAlerts() {
 function saveDismissedAlerts(keys: Set<string>) {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(DISMISSED_ALERTS_KEY, JSON.stringify(Array.from(keys)));
+  window.dispatchEvent(new CustomEvent(DISMISSED_ALERTS_EVENT));
 }
 
 export function NotificacoesBadge() {
@@ -67,14 +69,18 @@ export function NotificacoesBadge() {
   }, [alertas]);
 
   useEffect(() => {
-    const syncDismissedAlerts = (event: StorageEvent) => {
-      if (event.key === DISMISSED_ALERTS_KEY) {
-        setDismissed(readDismissedAlerts());
-      }
+    const syncDismissedAlerts = () => setDismissed(readDismissedAlerts());
+    const syncFromStorage = (event: StorageEvent) => {
+      if (event.key === DISMISSED_ALERTS_KEY) syncDismissedAlerts();
     };
 
-    window.addEventListener('storage', syncDismissedAlerts);
-    return () => window.removeEventListener('storage', syncDismissedAlerts);
+    window.addEventListener('storage', syncFromStorage);
+    window.addEventListener(DISMISSED_ALERTS_EVENT, syncDismissedAlerts);
+
+    return () => {
+      window.removeEventListener('storage', syncFromStorage);
+      window.removeEventListener(DISMISSED_ALERTS_EVENT, syncDismissedAlerts);
+    };
   }, []);
 
   const visibleAlertas = useMemo(
@@ -83,15 +89,6 @@ export function NotificacoesBadge() {
   );
   const count = visibleAlertas.length;
 
-  const handleDismiss = useCallback((key: string) => {
-    setDismissed((prev) => {
-      const next = new Set(prev);
-      next.add(key);
-      saveDismissedAlerts(next);
-      return next;
-    });
-  }, []);
-
   const handleDismissAll = useCallback(() => {
     const keys = new Set(alertas.map(getAlertKey));
     setDismissed(keys);
@@ -99,10 +96,20 @@ export function NotificacoesBadge() {
     setOpen(false);
   }, [alertas]);
 
+  const handleOpenChange = useCallback((nextOpen: boolean) => {
+    if (nextOpen && alertas.length > 0) {
+      const keys = new Set(alertas.map(getAlertKey));
+      setDismissed(keys);
+      saveDismissedAlerts(keys);
+    }
+
+    setOpen(nextOpen);
+  }, [alertas]);
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative" aria-label="Abrir notificações">
           <Bell className="h-5 w-5" />
           {count > 0 && (
             <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
@@ -129,16 +136,9 @@ export function NotificacoesBadge() {
               const Icon = iconMap[alerta.tipo];
 
               return (
-                <div key={key} className="flex items-start gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-muted/50 transition-colors group">
+                <div key={key} className="flex items-start gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
                   <Icon className={cn('h-4 w-4 mt-0.5 shrink-0', colorMap[alerta.tipo])} />
                   <p className="text-xs leading-snug flex-1">{alerta.mensagem}</p>
-                  <button
-                    onClick={() => handleDismiss(key)}
-                    className="text-[10px] text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                    aria-label="Dispensar notificação"
-                  >
-                    ✕
-                  </button>
                 </div>
               );
             })
