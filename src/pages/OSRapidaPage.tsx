@@ -120,7 +120,7 @@ export default function OSRapidaPage() {
             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Veículo</Label>
             {veiculo ? (
               <div className="flex items-center justify-between bg-accent-light border border-accent-border rounded-lg p-3">
-                <span className="text-sm font-medium">{[veiculo.marca, veiculo.modelo, veiculo.placa].filter(Boolean).join(' ') || (veiculo.tipo_veiculo === 'carro' ? 'Carro' : 'Moto')}</span>
+                <span className="text-sm font-medium">{[veiculo.marca, veiculo.modelo, veiculo.placa].filter(Boolean).join(' ') || ((veiculo as any).tipo_veiculo === 'carro' ? 'Carro' : 'Moto')}</span>
                 <Button variant="ghost" size="sm" onClick={() => setVeiculo(null)}>Trocar</Button>
               </div>
             ) : criandoVeiculo ? (
@@ -149,7 +149,7 @@ export default function OSRapidaPage() {
                   <div className="space-y-1">
                     {veiculos.map((v) => (
                       <button key={v.id} onClick={() => setVeiculo(v)} className="w-full flex items-center gap-2 p-3 bg-card border border-border rounded-lg hover:bg-muted/30 text-left min-h-[44px]">
-                        <span className="text-sm font-medium">{[v.marca, v.modelo].filter(Boolean).join(' ') || (v.tipo_veiculo === 'carro' ? 'Carro' : 'Moto')}</span>
+                        <span className="text-sm font-medium">{[v.marca, v.modelo].filter(Boolean).join(' ') || ((v as any).tipo_veiculo === 'carro' ? 'Carro' : 'Moto')}</span>
                         {v.placa && <span className="text-xs font-mono text-muted-foreground">{v.placa}</span>}
                       </button>
                     ))}
