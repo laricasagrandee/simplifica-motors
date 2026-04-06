@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Package, ClipboardList, ShoppingCart,
-  Wallet, BarChart3, UserCog, Settings, Calendar,
+  Wallet, BarChart3, UserCog, Settings, Calendar, Wrench,
 } from 'lucide-react';
 import { SidebarUserFooter } from './SidebarUserFooter';
 import { NotificacoesBadge } from '@/components/shared/NotificacoesBadge';
@@ -31,10 +31,7 @@ const bottomItems: MenuItem[] = [
   { label: 'Configurações', icon: Settings, path: '/configuracoes', permissao: 'ver_configuracoes' },
 ];
 
-// Keep menuItems export for compatibility
 export const menuItems: MenuItem[] = [...mainItems, ...bottomItems];
-
-// Keep sidebarGroups export for MobileDrawer compatibility
 export const sidebarGroups = [
   { label: 'Principal', icon: LayoutDashboard, items: mainItems, defaultOpen: true },
   { label: 'Gestão', icon: UserCog, items: bottomItems, defaultOpen: true },
@@ -68,32 +65,40 @@ export function AppSidebar() {
     return (
       <NavLink key={item.path} to={item.path}
         className={cn(
-          'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors min-h-[44px]',
+          'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all min-h-[44px] relative',
           isActive
-            ? 'bg-primary/10 text-primary font-semibold'
-            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            ? 'bg-primary/10 text-primary font-semibold border-l-[3px] border-primary pl-[9px]'
+            : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
         )}>
-        <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
+        <item.icon className={cn('h-[18px] w-[18px] shrink-0', isActive && 'text-primary')} strokeWidth={1.75} />
         <span className="flex-1">{item.label}</span>
         {badge != null && badge > 0 && (
-          <span className="text-[10px] font-bold bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 min-w-[20px] text-center">{badge}</span>
+          <span className="text-[10px] font-bold bg-destructive text-white rounded-full px-1.5 py-0.5 min-w-[20px] text-center">{badge}</span>
         )}
         {isFinanceiro && (
-          <span className={cn('w-2 h-2 rounded-full', caixaAberto ? 'bg-success' : 'bg-destructive')} />
+          <span className={cn(
+            'w-2.5 h-2.5 rounded-full',
+            caixaAberto ? 'bg-emerald-500' : 'bg-red-500 animate-pulse'
+          )} />
         )}
       </NavLink>
     );
   };
 
   return (
-    <aside className="hidden lg:flex flex-col w-[260px] min-h-screen border-r border-border bg-card">
+    <aside className="hidden lg:flex flex-col w-[260px] min-h-screen border-r border-border bg-gradient-to-b from-white to-slate-50/80">
       <div className="px-6 py-5 border-b border-border flex items-center justify-between">
-        <div>
-          <div className="flex items-baseline gap-0.5">
-            <span className="font-display font-extrabold text-xl text-foreground">Facilita</span>
-            <span className="font-display font-extrabold text-xl text-primary">Motors</span>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Wrench className="h-4 w-4 text-primary" />
           </div>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mt-0.5">Gestão de Oficina</p>
+          <div>
+            <div className="flex items-baseline gap-0.5">
+              <span className="font-display font-extrabold text-lg text-foreground">Facilita</span>
+              <span className="font-display font-extrabold text-lg text-primary">Motors</span>
+            </div>
+            <p className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground">Gestão de Oficina</p>
+          </div>
         </div>
         <NotificacoesBadge />
       </div>
@@ -104,7 +109,7 @@ export function AppSidebar() {
         {visibleMain.map(renderItem)}
       </nav>
       <div className="px-3 pb-2">
-        <div className="border-t border-border mb-2" />
+        <div className="border-t border-border mb-3 mt-1" />
         <div className="space-y-1">
           {visibleBottom.map(renderItem)}
         </div>
