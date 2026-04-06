@@ -4,7 +4,6 @@ import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { RecusaOrcamentoDialog } from './RecusaOrcamentoDialog';
-import { CaixaStatusBadge } from '@/components/shared/CaixaStatusBadge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatarNumeroOS } from '@/lib/formatters';
 import { validarTransicaoOS } from '@/lib/osValidations';
@@ -52,46 +51,47 @@ export function OSDetalheHeader({ os, itens, onMudarStatus, onRecusar, loading }
   };
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-      <div className="flex items-center gap-3 flex-wrap">
-        <h1 className="font-mono font-display text-2xl font-bold text-accent">{formatarNumeroOS(os.numero)}</h1>
+    <div className="mb-4">
+      {/* Top row: OS number + status + time */}
+      <div className="flex items-center gap-2 flex-wrap mb-3">
+        <h1 className="font-mono font-display text-xl sm:text-2xl font-bold text-accent">{formatarNumeroOS(os.numero)}</h1>
         <StatusBadge status={os.status as StatusOS} />
-        <CaixaStatusBadge />
         <span className="text-xs text-muted-foreground">
-          {os.status === 'entregue' ? `Concluída em ${dias} dias` : `Aberta há ${dias} dia${dias !== 1 ? 's' : ''}`}
+          {os.status === 'entregue' ? `${dias}d` : `${dias}d aberta`}
         </span>
         {os.garantia_ate && (
           isBefore(new Date(os.garantia_ate), new Date())
-            ? <Badge variant="secondary" className="text-xs">Garantia expirada</Badge>
-            : <Badge className="bg-success-light text-success border-success-border text-xs">Garantia até {format(new Date(os.garantia_ate), 'dd/MM/yyyy')}</Badge>
+            ? <Badge variant="secondary" className="text-[10px]">Garantia expirada</Badge>
+            : <Badge className="bg-success-light text-success border-success-border text-[10px]">Garantia até {format(new Date(os.garantia_ate), 'dd/MM')}</Badge>
         )}
       </div>
+
+      {/* Action buttons - compact row */}
       <div className="flex gap-2 flex-wrap">
         {next && (
-          <Button onClick={() => setConfirmOpen(true)} disabled={loading}>{next.label}</Button>
+          <Button size="sm" onClick={() => setConfirmOpen(true)} disabled={loading}>{next.label}</Button>
         )}
         {showEntrega && (
-          <Button variant="secondary" onClick={handleEntrega} disabled={loading}>Cliente Pagou e Retirou 🚗</Button>
+          <Button size="sm" variant="secondary" onClick={handleEntrega} disabled={loading}>Retirou 🚗</Button>
         )}
         {entregaBloqueada && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span><Button variant="secondary" disabled>Cliente Pagou e Retirou 🚗</Button></span>
+                <span><Button size="sm" variant="secondary" disabled>Retirou 🚗</Button></span>
               </TooltipTrigger>
-              <TooltipContent>Registre o pagamento antes de entregar</TooltipContent>
+              <TooltipContent>Registre o pagamento antes</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}
         {os.status !== 'cancelada' && os.status !== 'entregue' && (
-          <Button variant="ghost" className="text-danger hover:text-danger" onClick={() => setRecusaOpen(true)}>Cancelar OS</Button>
+          <Button size="sm" variant="ghost" className="text-danger hover:text-danger" onClick={() => setRecusaOpen(true)}>Cancelar OS</Button>
         )}
       </div>
 
       <ConfirmDialog open={confirmOpen} onOpenChange={setConfirmOpen}
         titulo={`Mudar para "${next?.label}"?`} descricao="Esta ação mudará o status da OS."
-        onConfirm={handleAvancar}
-        confirmLabel="Confirmar" />
+        onConfirm={handleAvancar} confirmLabel="Confirmar" />
       <RecusaOrcamentoDialog open={recusaOpen} onOpenChange={setRecusaOpen}
         valorOrcamento={os.valor_total ?? 0}
         onConfirm={async (motivo) => { await onRecusar(motivo); await onMudarStatus('cancelada'); }}
