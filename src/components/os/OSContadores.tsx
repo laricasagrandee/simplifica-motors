@@ -34,17 +34,16 @@ export function OSContadores({ contadores, loading, statusFiltro, onStatusClick 
   );
 
   return (
-    <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+    <div className="flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
       {ITEMS.map((item) => {
         const count = contadores?.[item.countKey] ?? 0;
-        // Hide zero-count statuses (except "Todas")
         if (item.key !== '' && count === 0) return null;
         const active = statusFiltro === item.key;
         const cfg = item.key ? STATUS_OS_CONFIG[item.key] : null;
-        const cls = cfg?.className ?? 'bg-surface-secondary text-secondary border-default';
+        const cls = cfg?.className ?? 'bg-[hsl(var(--surface-secondary))] text-[hsl(var(--text-secondary))] border-[hsl(var(--border))]';
         return (
           <button key={item.label} onClick={() => onStatusClick(active ? '' : item.key)}>
-            <Badge className={`cursor-pointer text-xs px-3 py-1 border whitespace-nowrap ${cls} ${active ? 'ring-2 ring-accent ring-offset-1' : ''}`}>
+            <Badge variant="outline" className={`cursor-pointer text-xs px-3 py-1.5 whitespace-nowrap ${cls} ${active ? 'ring-2 ring-[hsl(var(--accent))] ring-offset-1' : ''}`}>
               {item.label}: {count}
             </Badge>
           </button>
