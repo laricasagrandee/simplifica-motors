@@ -6,7 +6,7 @@ export const STATUS_OS_CONFIG: Record<StatusOS, { label: string; icon: string; c
   aprovada: { label: 'Aprovada', icon: 'CheckCircle', className: 'bg-accent-light text-accent border-accent-border' },
   em_execucao: { label: 'Em Serviço', icon: 'Wrench', className: 'bg-purple-light text-purple border-purple-border' },
   concluida: { label: 'Pronto', icon: 'CheckCheck', className: 'bg-success-light text-success border-success-border' },
-  entregue: { label: 'Retirado', icon: 'PackageCheck', className: 'bg-surface-secondary text-secondary border-default' },
+  entregue: { label: 'Retirado', icon: 'PackageCheck', className: 'bg-muted text-muted-foreground border-border' },
   cancelada: { label: 'Cancelada', icon: 'XCircle', className: 'bg-danger-light text-danger border-danger-border' },
 };
 
