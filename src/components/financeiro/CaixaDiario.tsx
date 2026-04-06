@@ -62,7 +62,29 @@ export function CaixaDiario({ caixa, loading, historico, onAbrir, onFechar }: Pr
   const [saldoAbertura, setSaldoAbertura] = useState('');
   const [confirmFechar, setConfirmFechar] = useState(false);
 
+  const hoje = format(new Date(), 'yyyy-MM-dd');
+  const { data: resumoFechamento } = useQuery({
+    queryKey: ['resumo-fechamento', hoje],
+    queryFn: async () => {
+      const { data: movs } = await supabase
+        .from('movimentacoes')
+        .select('tipo, valor')
+        .eq('pago', true)
+        .gte('data', `${hoje}T00:00:00`)
+        .lte('data', `${hoje}T23:59:59`);
+      const entradas = (movs || []).filter(m => m.tipo === 'entrada').reduce((s, m) => s + Number(m.valor), 0);
+      const saidas = (movs || []).filter(m => m.tipo === 'saida').reduce((s, m) => s + Number(m.valor), 0);
+      return { entradas, saidas };
+    },
+    enabled: !!caixa && caixa.status === 'aberto',
+  });
+
   if (loading) return <Skeleton className="h-40 w-full" />;
+
+  const saldoAbert = caixa?.saldo_abertura ?? 0;
+  const entradasCalc = resumoFechamento?.entradas ?? (caixa?.total_entradas ?? 0);
+  const saidasCalc = resumoFechamento?.saidas ?? (caixa?.total_saidas ?? 0);
+  const saldoFinalCalc = saldoAbert + entradasCalc - saidasCalc;
 
   if (!caixa) {
     return (
@@ -93,10 +115,10 @@ export function CaixaDiario({ caixa, loading, historico, onAbrir, onFechar }: Pr
           </Badge>
         </CardHeader>
         <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div><p className="text-xs text-muted-foreground">Abertura</p><MoneyDisplay valor={caixa.saldo_abertura ?? 0} /></div>
-          <div><p className="text-xs text-muted-foreground">Entradas</p><MoneyDisplay valor={caixa.total_entradas ?? 0} className="text-success" /></div>
-          <div><p className="text-xs text-muted-foreground">Saídas</p><MoneyDisplay valor={caixa.total_saidas ?? 0} className="text-destructive" /></div>
-          <div><p className="text-xs text-muted-foreground">Saldo</p><MoneyDisplay valor={caixa.saldo_fechamento ?? 0} className={(caixa.saldo_fechamento ?? 0) >= 0 ? 'text-accent' : 'text-destructive'} /></div>
+          <div><p className="text-xs text-muted-foreground">Abertura</p><MoneyDisplay valor={saldoAbert} /></div>
+          <div><p className="text-xs text-muted-foreground">Entradas</p><MoneyDisplay valor={entradasCalc} className="text-success" /></div>
+          <div><p className="text-xs text-muted-foreground">Saídas</p><MoneyDisplay valor={saidasCalc} className="text-destructive" /></div>
+          <div><p className="text-xs text-muted-foreground">Saldo</p><MoneyDisplay valor={saldoFinalCalc} className={saldoFinalCalc >= 0 ? 'text-accent' : 'text-destructive'} /></div>
         </CardContent>
         {caixa.status === 'aberto' ? (
           <div className="px-6 pb-4">
@@ -104,7 +126,7 @@ export function CaixaDiario({ caixa, loading, historico, onAbrir, onFechar }: Pr
           </div>
         ) : (
           <div className="px-6 pb-4 space-y-2">
-            <p className="text-sm text-muted-foreground text-center">Caixa fechado. Abra um novo caixa para hoje.</p>
+            <p className="text-sm text-muted-foreground text-center">Caixa fechado.</p>
             <div className="flex gap-2 justify-center items-end max-w-xs mx-auto">
               <div className="flex-1">
                 <Input type="number" step="0.01" placeholder="Saldo de abertura" value={saldoAbertura}
@@ -112,7 +134,7 @@ export function CaixaDiario({ caixa, loading, historico, onAbrir, onFechar }: Pr
               </div>
               <Button onClick={() => { onAbrir(parseFloat(saldoAbertura) || 0); setSaldoAbertura(''); }}
                 className="min-h-[44px] bg-accent text-accent-foreground gap-2">
-                <Unlock className="h-4 w-4" /> Abrir Caixa
+                <Unlock className="h-4 w-4" /> Reabrir Caixa
               </Button>
             </div>
           </div>
@@ -121,8 +143,34 @@ export function CaixaDiario({ caixa, loading, historico, onAbrir, onFechar }: Pr
 
       <OSPagasHoje />
 
-      <ConfirmDialog open={confirmFechar} titulo="Fechar Caixa?" descricao="O caixa será fechado e os totais calculados."
-        onConfirm={() => { onFechar(caixa.id); setConfirmFechar(false); }} onOpenChange={setConfirmFechar} />
+      {/* Fechamento summary dialog */}
+      <ConfirmDialog open={confirmFechar} titulo="Fechar Caixa?"
+        descricao=""
+        onConfirm={() => { onFechar(caixa.id); setConfirmFechar(false); }} onOpenChange={setConfirmFechar}
+        customContent={
+          <div className="space-y-3 py-2">
+            <p className="text-sm text-muted-foreground">Resumo do dia antes de fechar:</p>
+            <div className="bg-surface-secondary rounded-lg p-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Saldo de abertura</span>
+                <span className="font-mono font-medium">{formatarMoeda(saldoAbert)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Total entradas</span>
+                <span className="font-mono font-medium text-success">+{formatarMoeda(entradasCalc)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Total saídas</span>
+                <span className="font-mono font-medium text-destructive">-{formatarMoeda(saidasCalc)}</span>
+              </div>
+              <div className="border-t border-border pt-2 flex justify-between">
+                <span className="font-bold">Saldo final</span>
+                <span className={`font-mono font-bold ${saldoFinalCalc >= 0 ? 'text-accent' : 'text-destructive'}`}>{formatarMoeda(saldoFinalCalc)}</span>
+              </div>
+            </div>
+          </div>
+        }
+      />
 
       {historico.length > 0 && (
         <Card>
@@ -132,7 +180,7 @@ export function CaixaDiario({ caixa, loading, historico, onAbrir, onFechar }: Pr
               {historico.map(c => (
                 <div key={c.id} className="flex justify-between items-center px-4 py-2 text-sm">
                   <span className="font-mono text-xs">{formatarDataCurta(c.data)}</span>
-                  <Badge variant="outline" className="text-xs">{c.status}</Badge>
+                  <Badge variant="outline" className="text-xs">{c.status === 'aberto' ? 'Aberto' : 'Fechado'}</Badge>
                   <MoneyDisplay valor={c.saldo_fechamento ?? 0} className={(c.saldo_fechamento ?? 0) >= 0 ? 'text-success' : 'text-destructive'} />
                 </div>
               ))}
