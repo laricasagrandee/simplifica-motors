@@ -107,7 +107,15 @@ export function OSDetalheTabs({ os, onMudarStatus, mudarStatusLoading }: Props) 
             valorPecas={valorPecas} valorMaoObra={valorMaoObra} desconto={os.desconto ?? 0} valorTotal={valorTotal}
             onAdicionarPeca={() => setPecaOpen(true)} onAdicionarServico={() => setServicoOpen(true)}
             onRemover={(id) => removerItem.mutate({ id, osId: os.id })}
-            onDescontoChange={(v) => atualizar.mutate({ id: os.id, desconto: v })} />
+            onDescontoChange={(v) => atualizar.mutate({ id: os.id, desconto: v }, {
+              onSuccess: () => {
+                import('@/hooks/useOSItens').then(({ recalcularTotaisOS }) => {
+                  recalcularTotaisOS(os.id).then(() => {
+                    qc.invalidateQueries({ queryKey: ['os', os.id] });
+                  });
+                });
+              },
+            })} />
         </TabsContent>
         <TabsContent value="fotos">
           <OSFotosTab fotos={fotos ?? []} loading={fotosLoading}
