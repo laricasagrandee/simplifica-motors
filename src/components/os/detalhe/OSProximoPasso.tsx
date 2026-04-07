@@ -46,10 +46,10 @@ function getMsg(os: OrdemServico) {
 
 export function OSProximoPasso({ os, itens = [], onMudarStatus, onTabChange, loading }: Props) {
   const [previewOpen, setPreviewOpen] = useState(false);
-  const cfg = configs[os.status];
-  if (!cfg) return null;
   const { data: config } = useConfiguracoes();
   const atualizar = useAtualizarOS();
+  const cfg = configs[os.status];
+  if (!cfg) return null;
   const Icon = cfg.icon;
   const telefone = os.clientes?.telefone?.replace(/\D/g, '');
   const nomeOficina = config?.nome_fantasia ?? 'Nossa Oficina';
