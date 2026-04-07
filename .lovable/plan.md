@@ -1,119 +1,55 @@
 
 
-## Plano: Multi-tenant — Separar dados por oficina
+## Plano: Avisos pre-vencimento + tenant filter
 
-Este e o maior refactor do projeto. Cada oficina so vera seus proprios dados. O plano esta dividido em etapas claras.
+### Arquivos alterados
+- `src/hooks/usePlanos.ts`
+- `src/components/layout/BloqueioAviso.tsx`
+- `src/components/layout/BloqueioProvider.tsx`
 
----
+### Logica de avisos pre-vencimento em `usePlanos.ts`
 
-### ETAPA 1 — Migracao SQL (voce roda manualmente no Supabase)
+Adicionar `useTenantId()` para filtrar por tenant. Na query, usar `.eq('tenant_id', tenantId)` quando tenantId existe.
 
-Gero um arquivo SQL que voce cola no SQL Editor do Supabase. Ele faz:
+Buscar tambem o campo `plano` para saber se e teste.
 
-1. **Adiciona coluna `tenant_id` (uuid, nullable, FK para configuracoes.id)** nas tabelas:
-   - clientes, motos, ordens_servico, os_itens, os_fotos, os_pagamentos, os_tempo_servico
-   - pecas, movimentacoes, caixa, vendas_pdv, vendas_pdv_itens, notas_fiscais
-   - estoque_movimentacoes, agendamentos, inventarios, inventario_itens
-   - metas_mecanico, funcionarios
+Nova logica antes do retorno "sem aviso" quando `diff >= 0`:
 
-2. **Preenche dados existentes**: seta o tenant_id de todos os registros atuais com o ID da primeira configuracao existente
+**Plano teste** — aviso TODOS os dias:
+- `diff >= 1`: info azul — "Seu teste gratis acaba em X dias. Entre em contato para ativar seu plano."
+- `diff === 0`: suave amarelo — "Seu teste gratis acaba hoje! Entre em contato para ativar seu plano."
 
-3. **Cria indice** em cada tabela no campo tenant_id para performance
+**Plano pago** — aviso so nos ultimos 7 dias:
+- `diff <= 7 && diff >= 1`: info azul — "Seu acesso vence em X dias. Considere renovar."
+- `diff === 0`: suave amarelo — "Seu acesso vence hoje. Renove para nao perder o acesso."
 
-Nao adiciona em: `configuracoes` (ela E o tenant), `audit_log` (log global)
+Pos-vencimento continua igual (tolerancia 1-5, 6-10, 11-15, 16+ bloqueio).
 
----
+Adicionar campo `emPreAviso: boolean` no retorno de `BloqueioInfo`.
 
-### ETAPA 2 — Hook `useTenantId` + AuthContext
+### BloqueioAviso.tsx
 
-**Arquivo novo: `src/hooks/useTenantId.ts`**
-- Exporta `useTenantId()` que le o tenant_id do funcionario logado via AuthContext
+Adicionar nivel `info`:
+- Fundo azul claro (`bg-blue-50 border-blue-200`)
+- Icone azul (`text-blue-500`)
+- Texto azul (`text-blue-700`)
+- Sem animate-pulse
 
-**Editar `src/types/database.ts`**
-- Adiciona `tenant_id?: string | null` nos tipos: Funcionario, Cliente, Peca, OrdemServico, Movimentacao, Caixa, VendaPDV, NotaFiscal, etc.
+### BloqueioProvider.tsx
 
-**Editar `src/components/layout/AuthProvider.tsx`**
-- Adiciona `tenantId: string | null` no AuthContextType
-- Apos buscar o funcionario, extrai `funcionario.tenant_id` e expoe no contexto
-- Se funcionario existe mas nao tem tenant_id, mostra tela "Aguardando liberacao"
+Mostrar `BloqueioAviso` quando `emTolerancia || emPreAviso`. Passar o nivel e mensagem vindos do hook.
 
----
+### Resultado
 
-### ETAPA 3 — Filtrar TODAS as queries
-
-Crio helpers centrais:
-
-```typescript
-// src/lib/tenantHelper.ts
-export function addTenantFilter(query, tenantId) {
-  return tenantId ? query.eq('tenant_id', tenantId) : query;
-}
-```
-
-Edito **todos os ~40 hooks** para:
-- **SELECTs**: adicionar `.eq('tenant_id', tenantId)` 
-- **INSERTs**: adicionar `tenant_id` no payload
-
-Hooks afetados (agrupados):
-
-| Grupo | Hooks |
-|-------|-------|
-| Clientes | useClientes, useClienteOS, useAniversariantes |
-| Veiculos | useVeiculos, useMotos, useHistoricoVeiculo |
-| OS | useOS, useOSDetalhe, useOSItens, useOSFotos, useOSPagamentos, useOSChecklist, useTempoServico |
-| Pecas | usePecas, useEstoque, useInventario, useEtiquetas, useCategoriasPecas |
-| Financeiro | useFinanceiro, useMovimentacoes, useCaixa, useCaixaStatus, useContasPagar, useContasReceber, useFinanceiroCharts |
-| PDV | usePDV |
-| NF | useNF, useNFCompleta |
-| Funcionarios | useFuncionarios, useComissao, useMetas |
-| Agendamentos | useAgendamentos |
-| Dashboard | useDashboardMetrics, useDashboardCharts, useDashboardOS, useDashboardStats, useDashboardAlertas, useDashboardRanking, useDashboardExtras |
-| Relatorios | useRelatorios, useRelatorioAvancado, useRelatorioRecusas, useCMV, useDRE |
-| Config | useConfiguracoes (busca por tenant_id em vez de .limit(1)) |
-
-**Padrao em cada hook:**
-```typescript
-const tenantId = useTenantId();
-// SELECT: query.eq('tenant_id', tenantId)
-// INSERT: { ...data, tenant_id: tenantId }
-```
-
----
-
-### ETAPA 4 — Edge Function `admin-create-tenant`
-
-Editar `supabase/functions/admin-create-tenant/index.ts`:
-- Apos criar `configuracoes` e obter `config.id`, usar esse ID como `tenant_id` no insert de `funcionarios`
-
-```typescript
-await adminClient.from("funcionarios").insert({
-  ...dados,
-  tenant_id: config.id  // vincula funcionario a oficina
-});
-```
-
----
-
-### ETAPA 5 — Prompt 2 (Painel Master melhorado)
-
-Apos multi-tenant funcionando:
-- Tipo de acesso na criacao (teste gratis vs pago com periodos)
-- Botoes de renovacao na edicao e na tabela
-- Cores de vencimento na tabela
-
----
-
-### Ordem de execucao
-
-1. Gero o SQL da migracao — voce roda no Supabase
-2. Atualizo types em `database.ts`
-3. Crio `useTenantId` hook + atualizo AuthProvider
-4. Crio `tenantHelper.ts`
-5. Edito todos os hooks (maior volume de trabalho)
-6. Atualizo Edge Function
-7. Testa: cria 2 oficinas, loga em cada, confirma isolamento
-
-### Observacao importante
-
-Como o `tenant_id` comeca nullable, o sistema continua funcionando durante a migracao. Depois de tudo pronto e testado, pode-se tornar NOT NULL com um segundo SQL.
+| Situacao | Banner |
+|----------|--------|
+| Teste, faltam 29 dias | Azul: "Seu teste gratis acaba em 29 dias..." |
+| Teste, faltam 1 dia | Azul: "Seu teste gratis acaba em 1 dia..." |
+| Teste, vence hoje | Amarelo: "Seu teste gratis acaba hoje!" |
+| Pago, faltam 7 dias | Azul: "Seu acesso vence em 7 dias" |
+| Pago, vence hoje | Amarelo: "Seu acesso vence hoje" |
+| Venceu 1-5 dias | Amarelo (existente) |
+| Venceu 6-10 dias | Laranja (existente) |
+| Venceu 11-15 dias | Vermelho pulsante (existente) |
+| Venceu 16+ dias | Tela bloqueio (existente) |
 
