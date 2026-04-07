@@ -93,6 +93,21 @@ export function useAdminEditarOficina() {
   });
 }
 
+export function useAdminExcluirOficina() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('configuracoes').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-oficinas'] });
+      toast({ title: 'Oficina excluída!' });
+    },
+    onError: () => toast({ title: 'Erro ao excluir', variant: 'destructive' }),
+  });
+}
+
 export function useAdminBloquearOficina() {
   const qc = useQueryClient();
   return useMutation({

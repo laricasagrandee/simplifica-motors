@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format, differenceInDays } from 'date-fns';
-import { Pencil, Lock, Unlock, Plus, RefreshCw } from 'lucide-react';
+import { Pencil, Lock, Unlock, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
