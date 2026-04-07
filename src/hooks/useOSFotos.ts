@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeInput } from '@/lib/sanitize';
+import { useTenantId } from '@/hooks/useTenantId';
+import { withTenant } from '@/lib/tenantHelper';
 import type { OSFoto } from '@/types/database';
 
 export function useFotosPorOS(osId: string) {
@@ -37,6 +39,7 @@ async function compressImage(file: File): Promise<File> {
 
 export function useUploadFoto() {
   const qc = useQueryClient();
+  const tenantId = useTenantId();
   return useMutation({
     mutationFn: async ({ osId, file, categoria, descricao }: { osId: string; file: File; categoria: 'entrada' | 'durante' | 'saida' | 'recusa'; descricao?: string }) => {
       const compressed = await compressImage(file);
@@ -44,13 +47,13 @@ export function useUploadFoto() {
       const { error: upErr } = await supabase.storage.from('os-fotos').upload(path, compressed);
       if (upErr) throw upErr;
       const { data: urlData } = supabase.storage.from('os-fotos').getPublicUrl(path);
-      const { error } = await supabase.from('os_fotos').insert({
+      const { error } = await supabase.from('os_fotos').insert(withTenant({
         os_id: osId,
         tipo: categoria === 'saida' ? 'saida' : 'entrada',
         categoria,
         descricao: descricao ? sanitizeInput(descricao, 200) : null,
         url: urlData.publicUrl,
-      });
+      }, tenantId));
       if (error) throw error;
     },
     onSuccess: (_, v) => qc.invalidateQueries({ queryKey: ['os-fotos', v.osId] }),

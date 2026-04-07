@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeInput, FIELD_LIMITS } from '@/lib/sanitize';
+import { useTenantId } from '@/hooks/useTenantId';
+import { withTenant } from '@/lib/tenantHelper';
 import type { OrdemServico, StatusOS } from '@/types/database';
 
 const PER_PAGE = 15;
@@ -14,9 +16,10 @@ export interface OSFiltros {
 }
 
 export function useListarOS(filtros: OSFiltros = {}) {
+  const tenantId = useTenantId();
   const { status, busca, dataInicio, dataFim, pagina = 1 } = filtros;
   return useQuery({
-    queryKey: ['ordens-servico', status, busca, dataInicio, dataFim, pagina],
+    queryKey: ['ordens-servico', status, busca, dataInicio, dataFim, pagina, tenantId],
     queryFn: async () => {
       const from = (pagina - 1) * PER_PAGE;
       const to = from + PER_PAGE - 1;
@@ -27,6 +30,7 @@ export function useListarOS(filtros: OSFiltros = {}) {
         .order('criado_em', { ascending: false })
         .range(from, to);
 
+      if (tenantId) query = query.eq('tenant_id', tenantId);
       if (status) query = query.eq('status', status);
       if (busca?.trim()) {
         const term = `%${busca.trim()}%`;
@@ -40,14 +44,18 @@ export function useListarOS(filtros: OSFiltros = {}) {
       return { data: (data ?? []) as unknown as OrdemServico[], total: count ?? 0 };
     },
     staleTime: 30_000,
+    enabled: !!tenantId,
   });
 }
 
 export function useContadoresOS() {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: ['os-contadores'],
+    queryKey: ['os-contadores', tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('ordens_servico').select('status');
+      let query = supabase.from('ordens_servico').select('status');
+      if (tenantId) query = query.eq('tenant_id', tenantId);
+      const { data, error } = await query;
       if (error) throw error;
       const all = data ?? [];
       const count = (s: string) => all.filter((o) => o.status === s).length;
@@ -63,18 +71,22 @@ export function useContadoresOS() {
       };
     },
     staleTime: 30_000,
+    enabled: !!tenantId,
   });
 }
 
 export function useProximoNumeroOS() {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: ['proximo-numero-os'],
+    queryKey: ['proximo-numero-os', tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('ordens_servico')
         .select('numero')
         .order('numero', { ascending: false })
         .limit(1);
+      if (tenantId) query = query.eq('tenant_id', tenantId);
+      const { data, error } = await query;
       if (error) throw error;
       const last = data?.[0]?.numero ?? 0;
       return String(Number(last) + 1);
@@ -93,9 +105,10 @@ interface CriarOSInput {
 
 export function useCriarOS() {
   const qc = useQueryClient();
+  const tenantId = useTenantId();
   return useMutation({
     mutationFn: async (input: CriarOSInput) => {
-      const { data, error } = await supabase.from('ordens_servico').insert({
+      const { data, error } = await supabase.from('ordens_servico').insert(withTenant({
         cliente_id: input.clienteId,
         moto_id: input.motoId,
         mecanico_id: input.funcionarioId || null,
@@ -107,7 +120,7 @@ export function useCriarOS() {
         desconto: 0,
         valor_total: 0,
         parcelas: 1,
-      }).select().single();
+      }, tenantId)).select().single();
       if (error) throw error;
 
       if (input.quilometragem && input.quilometragem > 0) {
