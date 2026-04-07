@@ -29,7 +29,7 @@ export function PagamentoEntradaForm({ valorRestante, onAdicionar, loading }: Pr
 
   // Calcular taxa de cartão de crédito
   const taxaCreditoAvista = Number(config?.taxa_cartao_credito ?? 3.49);
-  const taxasParc = ((config as Record<string, unknown>)?.taxas_parcelamento as Record<string, number> | null) ?? {};
+  const taxasParc = ((config as unknown as Record<string, unknown>)?.taxas_parcelamento as Record<string, number> | null) ?? {};
 
   let taxaPct = 0;
   if (forma === 'cartao_credito') {
