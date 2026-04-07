@@ -1,7 +1,7 @@
 import type { StatusOS, CategoriaPeca, CargoFuncionario, FormaPagamento } from '@/types/database';
 
 export const MASTER_EMAIL = 'smartinfoconserta@gmail.com';
-export const SUPORTE_WHATSAPP = '5548999999999';
+export const SUPORTE_WHATSAPP = '5548999385829';
 export const SUPORTE_NOME = 'Facilita Motors';
 
 export const STATUS_OS_CONFIG: Record<StatusOS, { label: string; icon: string; className: string }> = {
