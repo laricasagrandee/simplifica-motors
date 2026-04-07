@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { formatarMoeda } from '@/lib/formatters';
 import type { OrdemServico, OSItem } from '@/types/database';
@@ -42,6 +42,9 @@ export function OrcamentoPreviewDialog({ open, onClose, os, itens, nomeOficina }
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display">Preview do Orçamento</DialogTitle>
+          <DialogDescription>
+            Revise a mensagem antes de enviar o orçamento pelo WhatsApp.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1">

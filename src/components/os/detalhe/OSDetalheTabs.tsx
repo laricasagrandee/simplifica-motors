@@ -16,7 +16,6 @@ import { OSProximoPasso } from './OSProximoPasso';
 import { OSResumoFinanceiro } from './OSResumoFinanceiro';
 import { AddPecaDialog } from './AddPecaDialog';
 import { AddServicoDialog } from './AddServicoDialog';
-import { OrcamentoPreviewDialog } from './OrcamentoPreviewDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAtualizarOS } from '@/hooks/useOSDetalhe';
 import { useItensPorOS, useAdicionarPeca, useAdicionarServico, useRemoverItem } from '@/hooks/useOSItens';
@@ -62,7 +61,6 @@ export function OSDetalheTabs({ os, onMudarStatus, mudarStatusLoading }: Props) 
   const [activeTab, setActiveTab] = useState(() => getDefaultTab(os.status));
   const [pecaOpen, setPecaOpen] = useState(false);
   const [servicoOpen, setServicoOpen] = useState(false);
-  const [orcamentoPreviewOpen, setOrcamentoPreviewOpen] = useState(false);
 
   const qc = useQueryClient();
   const { data: configData } = useConfiguracoes();
@@ -87,23 +85,6 @@ export function OSDetalheTabs({ os, onMudarStatus, mudarStatusLoading }: Props) 
   const handleStatus = async (status: StatusOS) => {
     await onMudarStatus(status);
     if (status === 'concluida') setActiveTab('pagamento');
-
-    // Ao enviar orçamento, abrir preview do WhatsApp
-    if (status === 'em_orcamento') {
-      setOrcamentoPreviewOpen(true);
-    }
-
-    // Ao concluir, avisar cliente pelo WhatsApp
-    if (status === 'concluida') {
-      const telefone = cliente?.telefone?.replace(/\D/g, '');
-      if (telefone) {
-        const veiculoInfo = veiculo ? [veiculo.marca, veiculo.modelo, veiculo.placa].filter(Boolean).join(' ') : '';
-        const msg = `Olá${cliente?.nome ? `, ${cliente.nome}` : ''}! 🔧✅\n\n` +
-          `Seu veículo ${veiculoInfo ? `*${veiculoInfo}* ` : ''}já está *pronto para retirada*.\n\n` +
-          `Aguardamos você! 😊`;
-        window.open(`https://wa.me/55${telefone}?text=${encodeURIComponent(msg)}`, '_blank');
-      }
-    }
   };
 
   return (
@@ -190,8 +171,7 @@ export function OSDetalheTabs({ os, onMudarStatus, mudarStatusLoading }: Props) 
         onAdicionar={async (d) => { await addPeca.mutateAsync({ osId: os.id, ...d }); }} loading={addPeca.isPending} />
       <AddServicoDialog open={servicoOpen} onClose={() => setServicoOpen(false)}
         onAdicionar={async (d) => { await addServico.mutateAsync({ osId: os.id, ...d }); }} loading={addServico.isPending} />
-      <OrcamentoPreviewDialog open={orcamentoPreviewOpen} onClose={() => setOrcamentoPreviewOpen(false)}
-        os={os} itens={itens ?? []} nomeOficina={configData?.nome_fantasia ?? configData?.razao_social ?? 'Oficina'} />
     </>
   );
 }
+
