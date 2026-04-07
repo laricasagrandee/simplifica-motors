@@ -7,11 +7,7 @@ export function useHistoricoVeiculo(veiculoId: string) {
     queryKey: ['historico-veiculo', veiculoId],
     enabled: !!veiculoId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('ordens_servico')
-        .select('id, numero, status, problema_relatado, valor_total, criado_em, data_conclusao, funcionarios(nome)')
-        .eq('moto_id', veiculoId)
-        .order('criado_em', { ascending: false });
+      const { data, error } = await supabase.from('ordens_servico').select('id, numero, status, problema_relatado, valor_total, criado_em, data_conclusao, funcionarios(nome)').eq('moto_id', veiculoId).order('criado_em', { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as OrdemServico[];
     },
