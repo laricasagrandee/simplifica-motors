@@ -50,7 +50,7 @@ export function useListarClientes(busca = '', pagina = 1, apenasCompletos = fals
           .ilike('placa', `%${busca.trim()}%`), tenantId);
         const { data: placaData } = await placaQuery;
         if (placaData && placaData.length > 0) {
-          const clienteIds = [...new Set(placaData.map((p: any) => p.cliente_id))];
+          const clienteIds = [...new Set(placaData.map((p: any) => p.cliente_id))] as string[];
           const clienteQuery = tf(supabase
             .from('clientes')
             .select('*, motos(id, placa)', { count: 'exact' })
