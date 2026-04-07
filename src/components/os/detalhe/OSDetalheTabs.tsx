@@ -191,7 +191,7 @@ export function OSDetalheTabs({ os, onMudarStatus, mudarStatusLoading }: Props) 
       <AddServicoDialog open={servicoOpen} onClose={() => setServicoOpen(false)}
         onAdicionar={async (d) => { await addServico.mutateAsync({ osId: os.id, ...d }); }} loading={addServico.isPending} />
       <OrcamentoPreviewDialog open={orcamentoPreviewOpen} onClose={() => setOrcamentoPreviewOpen(false)}
-        os={os} itens={itens ?? []} nomeOficina={configData?.nome_oficina ?? 'Oficina'} />
+        os={os} itens={itens ?? []} nomeOficina={configData?.nome_fantasia ?? configData?.razao_social ?? 'Oficina'} />
     </>
   );
 }
