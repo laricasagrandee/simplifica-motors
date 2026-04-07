@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenantId } from '@/hooks/useTenantId';
 import type { Configuracao } from '@/types/database';
 import type { NFItem } from '@/components/nf/NFPreviewItens';
 
@@ -25,16 +26,19 @@ export interface NotaFiscalCompleta {
 }
 
 export function useNFCompleta(nfId: string) {
+  const tenantId = useTenantId();
   return useQuery<NotaFiscalCompleta>({
-    queryKey: ['nf-completa', nfId],
+    queryKey: ['nf-completa', nfId, tenantId],
     queryFn: async () => {
       // 1. NF base
       const { data: nf, error: nfErr } = await supabase
         .from('notas_fiscais').select('*').eq('id', nfId).single();
       if (nfErr) throw nfErr;
 
-      // 2. Config
-      const { data: configs } = await supabase.from('configuracoes').select('*').limit(1);
+      // 2. Config — filtrar por tenant_id
+      let cfgQuery = supabase.from('configuracoes').select('*');
+      if (tenantId) cfgQuery = cfgQuery.eq('id', tenantId);
+      const { data: configs } = await cfgQuery.limit(1);
       const config = (configs?.[0] ?? {}) as Configuracao;
       const aliquota = config.aliquota_imposto ?? 0;
 
@@ -88,6 +92,6 @@ export function useNFCompleta(nfId: string) {
         config,
       };
     },
-    enabled: !!nfId,
+    enabled: !!nfId && !!tenantId,
   });
 }
