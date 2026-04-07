@@ -4,8 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAdminEditarOficina, PLANOS_CONFIG } from '@/hooks/useAdminOficinas';
+import { useAdminEditarOficina } from '@/hooks/useAdminOficinas';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, KeyRound } from 'lucide-react';
@@ -18,17 +17,12 @@ interface Props {
   onOpenChange: (v: boolean) => void;
 }
 
-const PLANOS = Object.keys(PLANOS_CONFIG);
-
 export function EditarOficinaDialog({ oficina, adminInfo, open, onOpenChange }: Props) {
   const [form, setForm] = useState({
     nome_fantasia: oficina.nome_fantasia || '',
     cnpj: oficina.cnpj || '',
-    plano: oficina.plano || 'basico',
     data_vencimento_plano: oficina.data_vencimento_plano?.slice(0, 10) || '',
     plano_ativo: oficina.plano_ativo ?? true,
-    max_funcionarios: oficina.max_funcionarios || 3,
-    dias_tolerancia: oficina.dias_tolerancia || 15,
   });
   const [resetando, setResetando] = useState(false);
 
@@ -39,11 +33,8 @@ export function EditarOficinaDialog({ oficina, adminInfo, open, onOpenChange }: 
       id: oficina.id,
       nome_fantasia: form.nome_fantasia,
       cnpj: form.cnpj || null,
-      plano: form.plano,
       data_vencimento_plano: form.data_vencimento_plano ? new Date(form.data_vencimento_plano + 'T12:00:00').toISOString() : null,
       plano_ativo: form.plano_ativo,
-      max_funcionarios: form.max_funcionarios,
-      dias_tolerancia: form.dias_tolerancia,
     }, { onSuccess: () => onOpenChange(false) });
   };
 
@@ -79,35 +70,12 @@ export function EditarOficinaDialog({ oficina, adminInfo, open, onOpenChange }: 
             <Input value={form.cnpj} onChange={(e) => setForm({ ...form, cnpj: e.target.value })} className="bg-slate-700 border-slate-600 text-white" />
           </div>
           <div>
-            <Label className="text-slate-300">Plano</Label>
-            <Select value={form.plano} onValueChange={(v) => setForm({ ...form, plano: v })}>
-              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PLANOS.map((p) => (
-                  <SelectItem key={p} value={p}>{PLANOS_CONFIG[p].label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
             <Label className="text-slate-300">Vencimento</Label>
             <Input type="date" value={form.data_vencimento_plano} onChange={(e) => setForm({ ...form, data_vencimento_plano: e.target.value })} className="bg-slate-700 border-slate-600 text-white" />
           </div>
           <div className="flex items-center justify-between">
-            <Label className="text-slate-300">Plano Ativo</Label>
+            <Label className="text-slate-300">Acesso Ativo</Label>
             <Switch checked={form.plano_ativo} onCheckedChange={(v) => setForm({ ...form, plano_ativo: v })} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="text-slate-300">Máx. Funcionários</Label>
-              <Input type="number" min={1} value={form.max_funcionarios} onChange={(e) => setForm({ ...form, max_funcionarios: Number(e.target.value) })} className="bg-slate-700 border-slate-600 text-white" />
-            </div>
-            <div>
-              <Label className="text-slate-300">Dias Tolerância</Label>
-              <Input type="number" min={0} value={form.dias_tolerancia} onChange={(e) => setForm({ ...form, dias_tolerancia: Number(e.target.value) })} className="bg-slate-700 border-slate-600 text-white" />
-            </div>
           </div>
 
           {adminInfo && (

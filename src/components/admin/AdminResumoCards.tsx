@@ -1,25 +1,21 @@
-import { Building2, CheckCircle, XCircle, DollarSign } from 'lucide-react';
+import { Building2, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { formatarMoeda } from '@/lib/formatters';
 import type { OficinaComStatus } from '@/hooks/useAdminOficinas';
-import { PLANOS_PRECO } from '@/hooks/useAdminOficinas';
 
 interface Props {
   oficinas: OficinaComStatus[];
 }
 
 export function AdminResumoCards({ oficinas }: Props) {
-  const ativas = oficinas.filter((o) => o.status === 'ativo' || o.status === 'tolerancia').length;
+  const ativas = oficinas.filter((o) => o.status === 'ativo').length;
+  const emAviso = oficinas.filter((o) => o.status === 'aviso').length;
   const bloqueadas = oficinas.filter((o) => o.status === 'bloqueado').length;
-  const receita = oficinas
-    .filter((o) => o.status !== 'bloqueado' && o.plano)
-    .reduce((acc, o) => acc + (PLANOS_PRECO[o.plano!] || 0), 0);
 
   const cards = [
     { label: 'Total de Oficinas', value: oficinas.length, icon: Building2, color: 'text-blue-400', bg: 'bg-blue-500/10' },
     { label: 'Ativas', value: ativas, icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+    { label: 'Em Aviso', value: emAviso, icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10' },
     { label: 'Bloqueadas', value: bloqueadas, icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10' },
-    { label: 'Receita Estimada', value: formatarMoeda(receita), icon: DollarSign, color: 'text-amber-400', bg: 'bg-amber-500/10' },
   ];
 
   return (

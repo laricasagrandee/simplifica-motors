@@ -21,7 +21,7 @@ export function BloqueioProvider({ children }: { children: ReactNode }) {
 
   return (
     <BloqueioContext.Provider value={{ bloqueado, emTolerancia }}>
-      {emTolerancia && <BloqueioAviso diasRestantes={data?.diasRestantes || 0} mensagem={data?.mensagem || ''} />}
+      {emTolerancia && <BloqueioAviso diasRestantes={data?.diasRestantes || 0} mensagem={data?.mensagem || ''} nivel={data?.nivel} />}
       {children}
     </BloqueioContext.Provider>
   );
