@@ -14,15 +14,14 @@ export type Acao =
   | 'emitir_nf'
   | 'ver_configuracoes'
   | 'gerenciar_planos'
-  | 'excluir_dados'
-  | 'admin_master';
+  | 'excluir_dados';
 
 const PERMISSOES: Record<CargoFuncionario, Set<Acao>> = {
   admin: new Set<Acao>([
     'ver_dashboard', 'gerenciar_clientes', 'gerenciar_pecas', 'gerenciar_os',
     'usar_pdv', 'ver_financeiro', 'ver_cmv', 'ver_dre', 'ver_relatorios',
     'gerenciar_equipe', 'emitir_nf', 'ver_configuracoes', 'gerenciar_planos',
-    'excluir_dados', 'admin_master',
+    'excluir_dados',
   ]),
   gerente: new Set<Acao>([
     'ver_dashboard', 'gerenciar_clientes', 'gerenciar_pecas', 'gerenciar_os',

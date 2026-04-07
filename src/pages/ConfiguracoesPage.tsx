@@ -9,7 +9,6 @@ import { ConfigDadosOficina } from '@/components/configuracoes/ConfigDadosOficin
 import { ConfigPlanoAtual } from '@/components/configuracoes/ConfigPlanoAtual';
 import { ConfigImpostos } from '@/components/configuracoes/ConfigImpostos';
 import { AuditLogViewer } from '@/components/configuracoes/AuditLogViewer';
-import { AdminMasterTab } from '@/components/configuracoes/AdminMasterTab';
 
 export default function ConfiguracoesPage() {
   const config = useConfiguracoes();
@@ -27,7 +26,6 @@ export default function ConfiguracoesPage() {
       <Tabs defaultValue="geral">
         <TabsList>
           <TabsTrigger value="geral">Geral</TabsTrigger>
-          {isAdmin && <TabsTrigger value="master">Master</TabsTrigger>}
           {isAdmin && <TabsTrigger value="auditoria">Log de Auditoria</TabsTrigger>}
         </TabsList>
         <TabsContent value="geral">
@@ -46,11 +44,6 @@ export default function ConfiguracoesPage() {
             />
           </div>
         </TabsContent>
-        {isAdmin && (
-          <TabsContent value="master">
-            <AdminMasterTab />
-          </TabsContent>
-        )}
         {isAdmin && (
           <TabsContent value="auditoria">
             <div className="mt-4">
