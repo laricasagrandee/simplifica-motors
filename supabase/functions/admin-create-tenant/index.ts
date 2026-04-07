@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
         nome_fantasia,
         cnpj: cnpj || null,
         telefone: telefone_oficina || null,
-        plano: "basico",
+        plano: "teste",
         plano_ativo: true,
         data_vencimento_plano: data_vencimento || new Date(Date.now() + 30 * 86400000).toISOString(),
         max_funcionarios: 999,
