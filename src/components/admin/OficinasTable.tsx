@@ -1,22 +1,17 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Pencil, Lock, Unlock, Plus } from 'lucide-react';
+import { Pencil, Lock, Unlock, Plus, Zap } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { EditarOficinaDialog } from './EditarOficinaDialog';
 import { NovaOficinaDialog } from './NovaOficinaDialog';
+import { AtivarPlanoDialog } from './AtivarPlanoDialog';
 import { useAdminBloquearOficina } from '@/hooks/useAdminOficinas';
 import type { OficinaComStatus } from '@/hooks/useAdminOficinas';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
 interface AdminFuncInfo {
@@ -31,15 +26,18 @@ interface Props {
   admins?: AdminFuncInfo[];
 }
 
-const statusConfig = {
+const statusConfig: Record<string, { label: string; className: string }> = {
   ativo: { label: 'Ativo', className: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
   tolerancia: { label: 'Tolerância', className: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
   bloqueado: { label: 'Bloqueado', className: 'bg-red-500/20 text-red-400 border-red-500/30' },
+  teste_ativo: { label: 'Teste Ativo', className: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+  teste_expirado: { label: 'Teste Expirado', className: 'bg-red-500/20 text-red-400 border-red-500/30' },
 };
 
 export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Props) {
   const [editando, setEditando] = useState<OficinaComStatus | null>(null);
   const [novaOpen, setNovaOpen] = useState(false);
+  const [ativarPlano, setAtivarPlano] = useState<OficinaComStatus | null>(null);
   const [confirmacao, setConfirmacao] = useState<{ oficina: OficinaComStatus; liberar: boolean } | null>(null);
   const bloquear = useAdminBloquearOficina();
 
@@ -54,6 +52,9 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
       onSuccess: () => setConfirmacao(null),
     });
   };
+
+  const needsActivation = (o: OficinaComStatus) =>
+    o.plano === 'teste' || o.status === 'teste_expirado' || o.status === 'bloqueado';
 
   return (
     <>
@@ -79,7 +80,7 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
           </TableHeader>
           <TableBody>
             {oficinas.map((o) => {
-              const sc = statusConfig[o.status];
+              const sc = statusConfig[o.status] || statusConfig.ativo;
               const admin = getAdminInfo(o.id);
               return (
                 <TableRow key={o.id} className="border-slate-700 hover:bg-slate-800/50">
@@ -95,7 +96,13 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
                     )}
                   </TableCell>
                   <TableCell className="text-slate-300 hidden lg:table-cell font-mono text-xs">{o.cnpj || '—'}</TableCell>
-                  <TableCell className="text-slate-300 capitalize">{o.plano || '—'}</TableCell>
+                  <TableCell>
+                    {o.plano === 'teste' ? (
+                      <Badge variant="outline" className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Teste</Badge>
+                    ) : (
+                      <span className="text-slate-300 capitalize">{o.plano || '—'}</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-slate-300 hidden lg:table-cell">
                     {o.data_vencimento_plano ? format(new Date(o.data_vencimento_plano), 'dd/MM/yyyy') : '—'}
                   </TableCell>
@@ -104,10 +111,15 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
+                      {needsActivation(o) && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-400 hover:text-amber-300 hover:bg-slate-700" title="Ativar Plano" onClick={() => setAtivarPlano(o)}>
+                          <Zap className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-700" onClick={() => setEditando(o)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                      {o.status === 'bloqueado' ? (
+                      {o.status === 'bloqueado' || o.status === 'teste_expirado' ? (
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-400 hover:text-emerald-300 hover:bg-slate-700" onClick={() => setConfirmacao({ oficina: o, liberar: true })}>
                           <Unlock className="h-3.5 w-3.5" />
                         </Button>
@@ -131,14 +143,12 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
       </div>
 
       {editando && (
-        <EditarOficinaDialog
-          oficina={editando}
-          adminInfo={getAdminInfo(editando.id)}
-          open={!!editando}
-          onOpenChange={(v) => !v && setEditando(null)}
-        />
+        <EditarOficinaDialog oficina={editando} adminInfo={getAdminInfo(editando.id)} open={!!editando} onOpenChange={(v) => !v && setEditando(null)} />
       )}
       <NovaOficinaDialog open={novaOpen} onOpenChange={setNovaOpen} />
+      {ativarPlano && (
+        <AtivarPlanoDialog oficina={ativarPlano} open={!!ativarPlano} onOpenChange={(v) => !v && setAtivarPlano(null)} />
+      )}
 
       <AlertDialog open={!!confirmacao} onOpenChange={(v) => !v && setConfirmacao(null)}>
         <AlertDialogContent className="bg-slate-800 border-slate-700 text-white">

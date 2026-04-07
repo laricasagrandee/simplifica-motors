@@ -4,7 +4,7 @@ import { toast } from '@/hooks/use-toast';
 import type { Configuracao } from '@/types/database';
 
 export interface OficinaComStatus extends Configuracao {
-  status: 'ativo' | 'tolerancia' | 'bloqueado';
+  status: 'ativo' | 'tolerancia' | 'bloqueado' | 'teste_ativo' | 'teste_expirado';
   diasRestantes: number;
 }
 
@@ -22,6 +22,12 @@ function calcularStatus(config: Configuracao): Pick<OficinaComStatus, 'status' |
   const hoje = new Date();
   const diff = Math.ceil((venc.getTime() - hoje.getTime()) / 86400000);
   const tolerancia = config.dias_tolerancia || 15;
+  const isTeste = config.plano === 'teste';
+
+  if (isTeste) {
+    if (diff >= 0) return { status: 'teste_ativo', diasRestantes: diff };
+    return { status: 'teste_expirado', diasRestantes: 0 };
+  }
 
   if (diff >= 0) return { status: 'ativo', diasRestantes: diff };
   if (Math.abs(diff) <= tolerancia) return { status: 'tolerancia', diasRestantes: tolerancia - Math.abs(diff) };
@@ -47,7 +53,6 @@ export function useAdminOficinasAdmins(configIds: string[]) {
     queryKey: ['admin-oficinas-admins', configIds],
     enabled: configIds.length > 0,
     queryFn: async () => {
-      // Get all admin funcionarios
       const { data, error } = await supabase
         .from('funcionarios')
         .select('id, nome, email, user_id, cargo')
@@ -55,29 +60,8 @@ export function useAdminOficinasAdmins(configIds: string[]) {
         .eq('ativo', true);
       if (error) throw error;
       if (!data || data.length === 0) return [];
-
-      // For each admin, find which config they belong to
-      // Since there's no direct config_id in funcionarios, we match via the fact
-      // that each config has one set of funcionarios. We'll query all configs
-      // and match by checking if the admin's user_id created that config.
-      // Simpler approach: return all admins and let the UI try to match them.
-      // The edge function creates config + funcionario in the same transaction,
-      // so we need a different approach.
-      
-      // Actually the simplest: there's typically one config per "tenant".
-      // Since we don't have config_id on funcionarios, we'll return all admins
-      // and the page will need to figure out mapping.
-      // For now, if there's only one config, all admins belong to it.
-      // With multi-tenant, we'd need a config_id FK.
-      
-      // Workaround: fetch all configs, for each config try to find an admin
-      // We can't do a perfect join without config_id, so let's just return
-      // all admin funcionarios and let the page show the first one per config.
-      
-      // Best effort: return admins grouped. Since we can't link them to configs
-      // without a FK, we'll return them as a flat list.
       return (data as any[]).map((f) => ({
-        config_id: '', // Will be resolved by the page
+        config_id: '',
         nome: f.nome,
         email: f.email,
       }));
@@ -115,30 +99,6 @@ export function useAdminEditarOficina() {
   });
 }
 
-export function useAdminNovaOficina() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (nome_fantasia: string) => {
-      const venc = new Date();
-      venc.setDate(venc.getDate() + 30);
-      const { error } = await supabase.from('configuracoes').insert({
-        nome_fantasia,
-        plano: 'basico',
-        plano_ativo: true,
-        data_vencimento_plano: venc.toISOString(),
-        max_funcionarios: 3,
-        dias_tolerancia: 15,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin-oficinas'] });
-      toast({ title: 'Oficina criada!' });
-    },
-    onError: () => toast({ title: 'Erro ao criar oficina', variant: 'destructive' }),
-  });
-}
-
 export function useAdminBloquearOficina() {
   const qc = useQueryClient();
   return useMutation({
@@ -160,10 +120,14 @@ export function useAdminBloquearOficina() {
   });
 }
 
-export const PLANOS_PRECO: Record<string, number> = {
-  basico: 99,
-  profissional: 199,
-  premium: 399,
-  vitalicia: 0,
-  enterprise: 599,
+export const PLANOS_CONFIG: Record<string, { label: string; preco: number; maxFunc: number }> = {
+  teste: { label: 'Teste Grátis', preco: 0, maxFunc: 2 },
+  basico: { label: 'Básico', preco: 99, maxFunc: 3 },
+  profissional: { label: 'Profissional', preco: 199, maxFunc: 10 },
+  premium: { label: 'Premium', preco: 399, maxFunc: 50 },
+  enterprise: { label: 'Enterprise', preco: 599, maxFunc: 999 },
 };
+
+export const PLANOS_PRECO: Record<string, number> = Object.fromEntries(
+  Object.entries(PLANOS_CONFIG).map(([k, v]) => [k, v.preco])
+);

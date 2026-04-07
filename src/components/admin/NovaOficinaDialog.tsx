@@ -7,29 +7,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, FlaskConical, CreditCard } from 'lucide-react';
+import { PLANOS_CONFIG } from '@/hooks/useAdminOficinas';
+import { formatarMoeda } from '@/lib/formatters';
+import { format } from 'date-fns';
 
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }
 
-const PLANOS_CONFIG: Record<string, { label: string; maxFunc: number }> = {
-  basico: { label: 'Básico', maxFunc: 3 },
-  profissional: { label: 'Profissional', maxFunc: 7 },
-  premium: { label: 'Premium', maxFunc: 15 },
-  enterprise: { label: 'Enterprise', maxFunc: 50 },
-};
+type TipoAtivacao = 'teste' | 'pago';
 
-function defaultVencimento() {
+function defaultVencimento(dias = 30) {
   const d = new Date();
-  d.setDate(d.getDate() + 30);
+  d.setDate(d.getDate() + dias);
   return d.toISOString().slice(0, 10);
 }
+
+const PLANOS_PAGOS = ['basico', 'profissional', 'premium', 'enterprise'] as const;
 
 export function NovaOficinaDialog({ open, onOpenChange }: Props) {
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
+  const [tipoAtivacao, setTipoAtivacao] = useState<TipoAtivacao>('teste');
   const [form, setForm] = useState({
     nome_fantasia: '',
     cnpj: '',
@@ -38,34 +39,24 @@ export function NovaOficinaDialog({ open, onOpenChange }: Props) {
     email: '',
     senha: '',
     telefone_responsavel: '',
-    plano: 'basico',
+    plano_pago: 'basico',
     data_vencimento: defaultVencimento(),
-    max_funcionarios: 3,
   });
 
-  const set = (field: string, value: string | number) => {
-    setForm((prev) => {
-      const next = { ...prev, [field]: value };
-      if (field === 'plano' && typeof value === 'string' && PLANOS_CONFIG[value]) {
-        next.max_funcionarios = PLANOS_CONFIG[value].maxFunc;
-      }
-      return next;
-    });
-  };
+  const set = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
+
+  const planoFinal = tipoAtivacao === 'teste' ? 'teste' : form.plano_pago;
+  const configPlano = PLANOS_CONFIG[planoFinal];
+  const maxFunc = configPlano?.maxFunc || 2;
+  const diasTolerancia = tipoAtivacao === 'teste' ? 5 : 15;
 
   const resetForm = () => {
     setForm({
-      nome_fantasia: '',
-      cnpj: '',
-      telefone_oficina: '',
-      nome_responsavel: '',
-      email: '',
-      senha: '',
-      telefone_responsavel: '',
-      plano: 'basico',
-      data_vencimento: defaultVencimento(),
-      max_funcionarios: 3,
+      nome_fantasia: '', cnpj: '', telefone_oficina: '',
+      nome_responsavel: '', email: '', senha: '', telefone_responsavel: '',
+      plano_pago: 'basico', data_vencimento: defaultVencimento(),
     });
+    setTipoAtivacao('teste');
   };
 
   const handleCriar = async () => {
@@ -80,6 +71,10 @@ export function NovaOficinaDialog({ open, onOpenChange }: Props) {
 
     setSaving(true);
     try {
+      const vencimento = tipoAtivacao === 'teste'
+        ? new Date(Date.now() + 30 * 86400000).toISOString()
+        : new Date(form.data_vencimento + 'T12:00:00').toISOString();
+
       const { data, error } = await supabase.functions.invoke('admin-create-tenant', {
         body: {
           email: form.email.trim().toLowerCase(),
@@ -89,18 +84,25 @@ export function NovaOficinaDialog({ open, onOpenChange }: Props) {
           nome_fantasia: form.nome_fantasia.trim(),
           cnpj: form.cnpj.trim() || null,
           telefone_oficina: form.telefone_oficina.trim() || null,
-          plano: form.plano,
-          data_vencimento: new Date(form.data_vencimento + 'T12:00:00').toISOString(),
-          max_funcionarios: form.max_funcionarios,
+          plano: planoFinal,
+          data_vencimento: vencimento,
+          max_funcionarios: maxFunc,
+          dias_tolerancia: diasTolerancia,
         },
       });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
+      const dataVencFormatada = tipoAtivacao === 'teste'
+        ? format(new Date(Date.now() + 30 * 86400000), 'dd/MM/yyyy')
+        : format(new Date(form.data_vencimento), 'dd/MM/yyyy');
+
       toast({
         title: 'Oficina criada com sucesso!',
-        description: `O responsável pode fazer login com ${form.email.trim().toLowerCase()} e a senha definida.`,
+        description: tipoAtivacao === 'teste'
+          ? `Login: ${form.email.trim().toLowerCase()} — Teste grátis até ${dataVencFormatada}`
+          : `Login: ${form.email.trim().toLowerCase()} — Plano ${configPlano.label} até ${dataVencFormatada}`,
       });
       qc.invalidateQueries({ queryKey: ['admin-oficinas'] });
       qc.invalidateQueries({ queryKey: ['admin-funcionarios-count'] });
@@ -169,32 +171,84 @@ export function NovaOficinaDialog({ open, onOpenChange }: Props) {
             </div>
           </div>
 
-          {/* Plano */}
+          {/* Tipo de Ativação */}
           <div>
-            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Plano</h3>
-            <div className="space-y-3">
-              <div>
-                <Label className="text-slate-300">Plano</Label>
-                <Select value={form.plano} onValueChange={(v) => set('plano', v)}>
-                  <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(PLANOS_CONFIG).map(([key, cfg]) => (
-                      <SelectItem key={key} value={key}>{cfg.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Tipo de Ativação</h3>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <button
+                type="button"
+                onClick={() => setTipoAtivacao('teste')}
+                className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                  tipoAtivacao === 'teste'
+                    ? 'border-blue-500 bg-blue-500/10 text-blue-400'
+                    : 'border-slate-600 bg-slate-700/50 text-slate-400 hover:border-slate-500'
+                }`}
+              >
+                <FlaskConical className="h-6 w-6" />
+                <span className="font-semibold text-sm">Teste Grátis</span>
+                <span className="text-xs opacity-75">30 dias • 2 funcionários</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTipoAtivacao('pago')}
+                className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                  tipoAtivacao === 'pago'
+                    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
+                    : 'border-slate-600 bg-slate-700/50 text-slate-400 hover:border-slate-500'
+                }`}
+              >
+                <CreditCard className="h-6 w-6" />
+                <span className="font-semibold text-sm">Plano Pago</span>
+                <span className="text-xs opacity-75">Escolher plano</span>
+              </button>
+            </div>
+
+            {tipoAtivacao === 'pago' && (
+              <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div>
+                  <Label className="text-slate-300">Plano</Label>
+                  <Select value={form.plano_pago} onValueChange={(v) => set('plano_pago', v)}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PLANOS_PAGOS.map((key) => {
+                        const cfg = PLANOS_CONFIG[key];
+                        return (
+                          <SelectItem key={key} value={key}>
+                            {cfg.label} — {formatarMoeda(cfg.preco)}/mês ({cfg.maxFunc === 999 ? 'ilimitado' : `${cfg.maxFunc} func.`})
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div>
                   <Label className="text-slate-300">Vencimento</Label>
                   <Input type="date" value={form.data_vencimento} onChange={(e) => set('data_vencimento', e.target.value)} className="bg-slate-700 border-slate-600 text-white" />
                 </div>
-                <div>
-                  <Label className="text-slate-300">Máx. Funcionários</Label>
-                  <Input type="number" min={1} value={form.max_funcionarios} onChange={(e) => set('max_funcionarios', Number(e.target.value))} className="bg-slate-700 border-slate-600 text-white" />
-                </div>
+              </div>
+            )}
+
+            {/* Resumo */}
+            <div className="mt-3 p-3 rounded-lg bg-slate-700/50 border border-slate-600 text-sm">
+              <div className="flex justify-between text-slate-300">
+                <span>Plano:</span>
+                <span className="font-medium text-white">{configPlano.label}</span>
+              </div>
+              <div className="flex justify-between text-slate-300">
+                <span>Máx. funcionários:</span>
+                <span className="font-medium text-white">{maxFunc === 999 ? 'Ilimitado' : maxFunc}</span>
+              </div>
+              <div className="flex justify-between text-slate-300">
+                <span>Tolerância:</span>
+                <span className="font-medium text-white">{diasTolerancia} dias</span>
+              </div>
+              <div className="flex justify-between text-slate-300">
+                <span>Valor:</span>
+                <span className="font-medium text-white">
+                  {configPlano.preco === 0 ? 'Grátis' : `${formatarMoeda(configPlano.preco)}/mês`}
+                </span>
               </div>
             </div>
           </div>
