@@ -1,46 +1,65 @@
 
 
-## Plano: Corrigir redirecionamento do Master e bloqueio indevido
+## Plano: Simplificar para plano unico sem limite de funcionarios + avisos graduais
 
-### Problemas identificados
+### O que muda
 
-**Problema 1 — Master email carrega como cliente normal no primeiro acesso**
-No `AuthProvider.tsx`, o redirect para `/admin` só acontece no evento `SIGNED_IN`. Quando a página recarrega (F5), o evento disparado é `INITIAL_SESSION`, não `SIGNED_IN`. Então o master fica preso dentro do `AuthProvider`, que tenta buscar um `funcionario` — como não tem, a permissão falha e mostra "Acesso Restrito".
+O modelo de negocio e mais simples do que foi implementado: nao existem planos diferentes. Toda oficina paga o mesmo valor. Nao existe limite de funcionarios. O que muda e so o vencimento e os avisos antes do bloqueio.
 
-**Problema 2 — Master email entra no AuthProvider quando não deveria**
-A rota `/dashboard` está dentro do `AuthProvider` (linha 68 do App.tsx). O master email navega inicialmente para `/dashboard` antes do redirect acontecer. O `AuthProvider` busca `funcionario`, não encontra, e o `ProtectedRoute` bloqueia.
+### Logica de avisos e bloqueio (apos vencimento)
 
-### Correções
+- **Dias 1-5 apos vencimento**: Aviso suave - "Sua assinatura venceu. Renove para continuar usando sem interrupcoes."
+- **Dias 6-10 apos vencimento**: Aviso forte - "Seu acesso sera bloqueado em breve. Entre em contato para renovar."
+- **Dia 11-15 apos vencimento**: Aviso urgente - "Ultimo aviso! Seu acesso sera bloqueado em X dias."
+- **Apos 15 dias**: Bloqueio total com tela de contato WhatsApp
 
-**`src/components/layout/AuthProvider.tsx`**
-1. Após setar o usuário no `onAuthStateChange`, verificar se é MASTER_EMAIL **em qualquer evento** (não só `SIGNED_IN`) e redirecionar para `/admin`
-2. Se o usuário logado for MASTER_EMAIL, não renderizar os children — mostrar loading e redirecionar
+### Arquivos alterados
 
-```
-// No onAuthStateChange, após setUsuario:
-if (session?.user.email === MASTER_EMAIL) {
-  navigate('/admin', { replace: true });
-  return;
-}
-```
+**1. `src/hooks/useAdminOficinas.ts`**
+- Remover `PLANOS_CONFIG` com multiplos planos
+- Manter apenas: `{ label: 'Facilita Motors', preco: 199, maxFunc: 999 }`
+- Remover `PLANOS_PRECO`
+- Simplificar `calcularStatus`: ativo, aviso, bloqueado (sem teste_ativo/teste_expirado separados)
 
-3. Após o `if (loading)` e `if (!usuario)`, adicionar:
-```
-if (usuario.email === MASTER_EMAIL) {
-  // Redireciona e não renderiza o sistema da oficina
-  return <AuthLoadingScreen />;
-}
-```
+**2. `src/components/admin/NovaOficinaDialog.tsx`**
+- Remover secao "Tipo de Ativacao" (teste vs pago)
+- Remover dropdown de planos
+- Manter: dados da oficina + dados do responsavel + campo de vencimento (padrao +30 dias)
+- Criar sempre com `plano: 'padrao'`, `plano_ativo: true`, `max_funcionarios: 999`, `dias_tolerancia: 15`
 
-**`src/App.tsx`** — `RootRedirect`
-- Verificar sessão e redirecionar master para `/admin` em vez de `/dashboard`
+**3. `src/components/admin/AtivarPlanoDialog.tsx`**
+- Remover dropdown de planos
+- Simplificar: so campo de nova data de vencimento + botao "Renovar"
 
-### Resultado
-- Master email: login vai direto para `/admin`, sem piscar "Acesso Restrito"
-- F5 no master: detecta e redireciona imediatamente
-- Cliente normal: continua funcionando igual
+**4. `src/components/admin/EditarOficinaDialog.tsx`**
+- Remover dropdown de plano
+- Remover campo max_funcionarios
+- Manter: nome, cnpj, telefone, vencimento, ativo toggle
 
-### Arquivos editados
-- `src/components/layout/AuthProvider.tsx`
-- `src/App.tsx` (ajuste no RootRedirect)
+**5. `src/components/admin/OficinasTable.tsx`**
+- Remover coluna "Plano" (nao tem mais variacao)
+- Ajustar badges de status
+
+**6. `src/hooks/usePlanos.ts` — `useVerificarBloqueio`**
+- Reescrever logica de tolerancia com 3 niveis:
+  - 1-5 dias: `{ emTolerancia: true, nivel: 'suave', mensagem: "..." }`
+  - 6-10 dias: `{ emTolerancia: true, nivel: 'forte', mensagem: "..." }`
+  - 11-15 dias: `{ emTolerancia: true, nivel: 'urgente', mensagem: "..." }`
+  - 15+: `{ bloqueado: true }`
+
+**7. `src/components/layout/BloqueioAviso.tsx`**
+- Estilizar por nivel: suave (amarelo), forte (laranja), urgente (vermelho pulsante)
+- Mensagens nao agressivas mas claras
+
+**8. `src/components/layout/BloqueioScreen.tsx`**
+- Remover logica de teste vs pago (tudo igual agora)
+- Mensagem unica: "Seu acesso foi suspenso por pendencia financeira. Entre em contato para regularizar."
+
+**9. `src/components/admin/AdminResumoCards.tsx`**
+- Remover card de "Receita estimada" (nao faz sentido com plano unico sem valores vistos)
+- Ou simplificar para mostrar: Total oficinas, Ativas, Em aviso, Bloqueadas
+
+**10. `supabase/functions/admin-create-tenant/index.ts`**
+- Remover parametros de plano variavel
+- Sempre criar com `plano: 'padrao'`, `max_funcionarios: 999`, `dias_tolerancia: 15`
 
