@@ -6,11 +6,7 @@ export function useClienteOSHistory(clienteId: string) {
   return useQuery<OrdemServico[]>({
     queryKey: ['cliente-os-history', clienteId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('ordens_servico')
-        .select('*')
-        .eq('cliente_id', clienteId)
-        .order('criado_em', { ascending: false });
+      const { data, error } = await supabase.from('ordens_servico').select('*').eq('cliente_id', clienteId).order('criado_em', { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as OrdemServico[];
     },

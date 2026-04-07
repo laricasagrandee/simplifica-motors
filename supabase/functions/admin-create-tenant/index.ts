@@ -123,6 +123,7 @@ Deno.serve(async (req) => {
       email,
       telefone: telefone_responsavel || "",
       ativo: true,
+      tenant_id: config.id,
     });
 
     if (funcError) {
