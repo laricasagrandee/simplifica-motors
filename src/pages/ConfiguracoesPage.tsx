@@ -9,6 +9,7 @@ import { ConfigDadosOficina } from '@/components/configuracoes/ConfigDadosOficin
 import { ConfigPlanoAtual } from '@/components/configuracoes/ConfigPlanoAtual';
 import { ConfigImpostos } from '@/components/configuracoes/ConfigImpostos';
 import { AuditLogViewer } from '@/components/configuracoes/AuditLogViewer';
+import { normalizarPlano } from '@/lib/planos';
 
 export default function ConfiguracoesPage() {
   const config = useConfiguracoes();
@@ -32,8 +33,8 @@ export default function ConfiguracoesPage() {
           <div className="space-y-6 mt-4">
             <ConfigDadosOficina config={c} loading={config.isLoading} onSalvar={d => atualizar.mutate(d)} onUploadLogo={f => c && uploadLogo.mutate({ file: f, configId: c.id })} />
             <Separator />
-            <ConfigPlanoAtual plano={c?.plano || 'basico'} planoAtivo={c?.plano_ativo ?? true}
-              vencimento={c?.data_vencimento_plano} maxFuncionarios={c?.max_funcionarios || 3} funcionariosAtivos={ativos} />
+            <ConfigPlanoAtual plano={normalizarPlano(c?.plano)} planoAtivo={c?.plano_ativo ?? true}
+              vencimento={c?.data_vencimento_plano} maxFuncionarios={c?.max_funcionarios ?? 999} funcionariosAtivos={ativos} />
             <Separator />
             <ConfigImpostos
               aliquota={c?.aliquota_imposto ?? 6}

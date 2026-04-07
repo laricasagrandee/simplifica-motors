@@ -6,6 +6,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const VALID_PLAN_VALUES = ["teste", "basico", "profissional", "premium", "enterprise"] as const;
+const DEFAULT_INITIAL_PLAN = "teste";
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -55,6 +58,8 @@ Deno.serve(async (req) => {
       data_vencimento,
     } = body;
 
+    const planoInicial = DEFAULT_INITIAL_PLAN;
+
     if (!email || !password || !nome_responsavel || !nome_fantasia) {
       return new Response(
         JSON.stringify({ error: "Campos obrigatórios: email, password, nome_responsavel, nome_fantasia" }),
@@ -87,7 +92,7 @@ Deno.serve(async (req) => {
         nome_fantasia,
         cnpj: cnpj || null,
         telefone: telefone_oficina || null,
-        plano: "teste",
+        plano: planoInicial,
         plano_ativo: true,
         data_vencimento_plano: data_vencimento || new Date(Date.now() + 30 * 86400000).toISOString(),
         max_funcionarios: 999,
@@ -99,7 +104,7 @@ Deno.serve(async (req) => {
     if (configError) {
       await adminClient.auth.admin.deleteUser(userId);
       return new Response(
-        JSON.stringify({ error: `Erro ao criar configuração: ${configError.message}` }),
+        JSON.stringify({ error: `Erro ao criar configuração com plano "${planoInicial}": ${configError.message}. Valores esperados no banco: ${VALID_PLAN_VALUES.join(", ")}` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

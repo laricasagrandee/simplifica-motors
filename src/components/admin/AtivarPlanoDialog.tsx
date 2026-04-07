@@ -25,10 +25,8 @@ export function AtivarPlanoDialog({ oficina, open, onOpenChange }: Props) {
   const handleAtivar = () => {
     editar.mutate({
       id: oficina.id,
-      plano: 'basico',
       plano_ativo: true,
       data_vencimento_plano: new Date(vencimento + 'T12:00:00').toISOString(),
-      max_funcionarios: 999,
       dias_tolerancia: 15,
     }, { onSuccess: () => onOpenChange(false) });
   };
