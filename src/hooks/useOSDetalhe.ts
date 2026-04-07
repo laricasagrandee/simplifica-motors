@@ -40,7 +40,7 @@ export function useAtualizarOS() {
       if (fields.motivo_recusa !== undefined) clean.motivo_recusa = sanitizeInput(String(fields.motivo_recusa ?? ''), FIELD_LIMITS.texto_livre);
       if (fields.valor_orcamento_recusado !== undefined) clean.valor_orcamento_recusado = fields.valor_orcamento_recusado;
 
-      const { error } = await supabase.from('ordens_servico').update(clean).eq('id', id);
+      const { error } = await supabase.from('ordens_servico').update(clean as any).eq('id', id);
       if (error) throw error;
     },
     onSuccess: (_, vars) => {
@@ -162,7 +162,7 @@ export function useMudarStatusOS() {
         update.garantia_ate = ate.toISOString().split('T')[0];
       }
 
-      const { error } = await supabase.from('ordens_servico').update(update).eq('id', id);
+      const { error } = await supabase.from('ordens_servico').update(update as any).eq('id', id);
       if (error) throw error;
 
       return avisos;
