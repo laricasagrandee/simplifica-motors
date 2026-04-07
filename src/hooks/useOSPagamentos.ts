@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { verificarCaixaAberto, atualizarCaixaEntrada } from '@/lib/caixaHelper';
 import { useTenantId } from '@/hooks/useTenantId';
-import { withTenant } from '@/lib/tenantHelper';
+import { wt } from '@/lib/tenantHelper';
 import { toast } from 'sonner';
 import { FORMAS_PAGAMENTO } from '@/lib/constants';
 import type { OSPagamento, FormaPagamento } from '@/types/database';
@@ -34,7 +34,7 @@ export function useAdicionarPagamento() {
     }) => {
       const troco = input.forma === 'dinheiro' && input.valorRecebido
         ? Math.max(0, input.valorRecebido - input.valor) : 0;
-      const { error } = await supabase.from('os_pagamentos').insert(withTenant({
+      const { error } = await supabase.from('os_pagamentos').insert(wt({
         os_id: input.osId, forma_pagamento: input.forma,
         valor: input.valor, parcelas: input.parcelas ?? 1,
         valor_recebido: input.valorRecebido ?? null, troco,
@@ -68,7 +68,9 @@ export function useFinalizarPagamento() {
     }) => {
       const dataHoje = new Date().toISOString().split('T')[0];
 
-      const { data: configData } = await supabase.from('configuracoes').select('taxa_cartao_debito, taxa_cartao_credito, taxas_parcelamento').eq('id', tenantId).single();
+      const { data: configData } = tenantId
+        ? await supabase.from('configuracoes').select('taxa_cartao_debito, taxa_cartao_credito, taxas_parcelamento').eq('id', tenantId).single()
+        : await supabase.from('configuracoes').select('taxa_cartao_debito, taxa_cartao_credito, taxas_parcelamento').limit(1).single();
       const taxaDebito = Number(configData?.taxa_cartao_debito ?? 1.99);
       const taxaCreditoAvista = Number(configData?.taxa_cartao_credito ?? 3.49);
       const taxasParc = (configData?.taxas_parcelamento as Record<string, number> | null) ?? {};
@@ -76,7 +78,7 @@ export function useFinalizarPagamento() {
       let caixa = await verificarCaixaAberto();
       if (!caixa) {
         const { data, error } = await supabase.from('caixa')
-          .insert(withTenant({ data: dataHoje, saldo_abertura: 0, status: 'aberto', total_entradas: 0, total_saidas: 0 }, tenantId))
+          .insert(wt({ data: dataHoje, saldo_abertura: 0, status: 'aberto', total_entradas: 0, total_saidas: 0 }, tenantId))
           .select('id, saldo_abertura, total_entradas, total_saidas').single();
         if (error) throw new Error('Não foi possível abrir o caixa');
         caixa = data;
@@ -92,7 +94,7 @@ export function useFinalizarPagamento() {
         const descricao = n > 1
           ? `OS-${osNumero} · ${label} ${n}x`
           : `OS-${osNumero} · ${label}`;
-        const { error } = await supabase.from('movimentacoes').insert(withTenant({
+        const { error } = await supabase.from('movimentacoes').insert(wt({
           tipo: 'entrada', categoria: 'os_pagamento',
           descricao, valor: pag.valor, forma_pagamento: pag.forma_pagamento,
           os_id: osId, data: dataHoje, pago: isPago,
@@ -109,7 +111,7 @@ export function useFinalizarPagamento() {
         if (taxaPct > 0) {
           const valorTaxa = Math.round(pag.valor * taxaPct) / 100;
           totalTaxas += valorTaxa;
-          await supabase.from('movimentacoes').insert(withTenant({
+          await supabase.from('movimentacoes').insert(wt({
             tipo: 'saida', categoria: 'taxa_cartao',
             descricao: `Taxa ${label} ${taxaPct}% · OS-${osNumero}`,
             valor: valorTaxa, forma_pagamento: pag.forma_pagamento,

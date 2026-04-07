@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeInput, FIELD_LIMITS } from '@/lib/sanitize';
 import { useTenantId } from '@/hooks/useTenantId';
-import { withTenant } from '@/lib/tenantHelper';
+import { tf, wt } from '@/lib/tenantHelper';
 import type { OrdemServico, StatusOS } from '@/types/database';
 
 const PER_PAGE = 15;
@@ -24,13 +24,12 @@ export function useListarOS(filtros: OSFiltros = {}) {
       const from = (pagina - 1) * PER_PAGE;
       const to = from + PER_PAGE - 1;
 
-      let query = supabase
+      let query: any = tf(supabase
         .from('ordens_servico')
         .select('*, clientes(nome, telefone), motos(marca, modelo, placa), funcionarios(nome)', { count: 'exact' })
         .order('criado_em', { ascending: false })
-        .range(from, to);
+        .range(from, to), tenantId);
 
-      if (tenantId) query = query.eq('tenant_id', tenantId);
       if (status) query = query.eq('status', status);
       if (busca?.trim()) {
         const term = `%${busca.trim()}%`;
@@ -53,12 +52,10 @@ export function useContadoresOS() {
   return useQuery({
     queryKey: ['os-contadores', tenantId],
     queryFn: async () => {
-      let query = supabase.from('ordens_servico').select('status');
-      if (tenantId) query = query.eq('tenant_id', tenantId);
-      const { data, error } = await query;
+      const { data, error } = await tf(supabase.from('ordens_servico').select('status'), tenantId);
       if (error) throw error;
       const all = data ?? [];
-      const count = (s: string) => all.filter((o) => o.status === s).length;
+      const count = (s: string) => all.filter((o: any) => o.status === s).length;
       return {
         aberta: count('aberta'),
         em_orcamento: count('em_orcamento'),
@@ -80,13 +77,11 @@ export function useProximoNumeroOS() {
   return useQuery({
     queryKey: ['proximo-numero-os', tenantId],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await tf(supabase
         .from('ordens_servico')
         .select('numero')
         .order('numero', { ascending: false })
-        .limit(1);
-      if (tenantId) query = query.eq('tenant_id', tenantId);
-      const { data, error } = await query;
+        .limit(1), tenantId);
       if (error) throw error;
       const last = data?.[0]?.numero ?? 0;
       return String(Number(last) + 1);
@@ -108,7 +103,7 @@ export function useCriarOS() {
   const tenantId = useTenantId();
   return useMutation({
     mutationFn: async (input: CriarOSInput) => {
-      const { data, error } = await supabase.from('ordens_servico').insert(withTenant({
+      const { data, error } = await supabase.from('ordens_servico').insert(wt({
         cliente_id: input.clienteId,
         moto_id: input.motoId,
         mecanico_id: input.funcionarioId || null,

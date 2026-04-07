@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeInput, FIELD_LIMITS } from '@/lib/sanitize';
 import { useTenantId } from '@/hooks/useTenantId';
-import { withTenant } from '@/lib/tenantHelper';
+import { tf, wt } from '@/lib/tenantHelper';
 import type { Veiculo, OrdemServico } from '@/types/database';
 
 const PER_PAGE = 15;
@@ -14,12 +14,11 @@ export function useListarVeiculos(busca = '', pagina = 1) {
     queryFn: async () => {
       const from = (pagina - 1) * PER_PAGE;
       const to = from + PER_PAGE - 1;
-      let query = supabase
+      let query: any = tf(supabase
         .from('motos')
         .select('*, clientes(nome, telefone)', { count: 'exact' })
         .order('criado_em', { ascending: false })
-        .range(from, to);
-      if (tenantId) query = query.eq('tenant_id', tenantId);
+        .range(from, to), tenantId);
       if (busca.trim()) {
         const t = `%${busca.trim()}%`;
         query = query.or(`placa.ilike.${t},modelo.ilike.${t},marca.ilike.${t}`);
@@ -38,13 +37,11 @@ export function useVeiculosPorCliente(clienteId: string) {
   return useQuery<Veiculo[]>({
     queryKey: ['veiculos', clienteId],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await tf(supabase
         .from('motos')
         .select('*')
         .eq('cliente_id', clienteId)
-        .order('criado_em', { ascending: false });
-      if (tenantId) query = query.eq('tenant_id', tenantId);
-      const { data, error } = await query;
+        .order('criado_em', { ascending: false }), tenantId);
       if (error) throw error;
       return (data ?? []) as unknown as Veiculo[];
     },
@@ -70,7 +67,7 @@ export function useCriarVeiculo() {
   return useMutation({
     mutationFn: async ({ clienteId, ...input }: { clienteId: string } & Record<string, string | number | null>) => {
       const clean = sanitizeVeiculo(input, clienteId);
-      const { data, error } = await supabase.from('motos').insert(withTenant(clean, tenantId)).select().single();
+      const { data, error } = await supabase.from('motos').insert(wt(clean, tenantId)).select().single();
       if (error) throw error;
       return data;
     },
@@ -107,13 +104,11 @@ export function useHistoricoOSVeiculo(veiculoId: string) {
   return useQuery<OrdemServico[]>({
     queryKey: ['historico-os-veiculo', veiculoId],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await tf(supabase
         .from('ordens_servico')
         .select('*, clientes(nome)')
         .eq('moto_id', veiculoId)
-        .order('criado_em', { ascending: false });
-      if (tenantId) query = query.eq('tenant_id', tenantId);
-      const { data, error } = await query;
+        .order('criado_em', { ascending: false }), tenantId);
       if (error) throw error;
       return (data ?? []) as unknown as OrdemServico[];
     },

@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeInput } from '@/lib/sanitize';
 import { useTenantId } from '@/hooks/useTenantId';
-import { withTenant } from '@/lib/tenantHelper';
+import { wt } from '@/lib/tenantHelper';
 import type { OSFoto } from '@/types/database';
 
 export function useFotosPorOS(osId: string) {
@@ -47,7 +47,7 @@ export function useUploadFoto() {
       const { error: upErr } = await supabase.storage.from('os-fotos').upload(path, compressed);
       if (upErr) throw upErr;
       const { data: urlData } = supabase.storage.from('os-fotos').getPublicUrl(path);
-      const { error } = await supabase.from('os_fotos').insert(withTenant({
+      const { error } = await supabase.from('os_fotos').insert(wt({
         os_id: osId,
         tipo: categoria === 'saida' ? 'saida' : 'entrada',
         categoria,

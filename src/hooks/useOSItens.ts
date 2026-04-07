@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeInput, sanitizeMonetary, sanitizeQuantity } from '@/lib/sanitize';
 import { useTenantId } from '@/hooks/useTenantId';
-import { withTenant } from '@/lib/tenantHelper';
+import { wt } from '@/lib/tenantHelper';
 import type { OSItem } from '@/types/database';
 
 async function recalcularTotaisOS(osId: string) {
@@ -63,7 +63,7 @@ export function useAdicionarPeca() {
   const tenantId = useTenantId();
   return useMutation({
     mutationFn: async (input: { osId: string; pecaId?: string; descricao: string; quantidade: number; valorUnitario: number }) => {
-      const { error } = await supabase.from('os_itens').insert(withTenant({
+      const { error } = await supabase.from('os_itens').insert(wt({
         os_id: input.osId,
         tipo: 'peca',
         peca_id: input.pecaId || null,
@@ -88,7 +88,7 @@ export function useAdicionarServico() {
   const tenantId = useTenantId();
   return useMutation({
     mutationFn: async (input: { osId: string; descricao: string; valorUnitario: number }) => {
-      const { error } = await supabase.from('os_itens').insert(withTenant({
+      const { error } = await supabase.from('os_itens').insert(wt({
         os_id: input.osId,
         tipo: 'servico',
         descricao: sanitizeInput(input.descricao, 200),

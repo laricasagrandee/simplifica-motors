@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { sanitizeInput, sanitizeEmail, sanitizeNumeric, FIELD_LIMITS } from '@/lib/sanitize';
 import { registrarLog } from '@/hooks/useAuditLog';
 import { useTenantId } from '@/hooks/useTenantId';
-import { addTenantFilter, withTenant } from '@/lib/tenantHelper';
+import { tf, wt } from '@/lib/tenantHelper';
 import type { Cliente } from '@/types/database';
 
 const PER_PAGE = 10;
@@ -16,13 +16,11 @@ export function useListarClientes(busca = '', pagina = 1, apenasCompletos = fals
       const from = (pagina - 1) * PER_PAGE;
       const to = from + PER_PAGE - 1;
 
-      let query = supabase
+      let query = tf(supabase
         .from('clientes')
         .select('*, motos(id, placa)', { count: 'exact' })
         .order('nome', { ascending: true })
-        .range(from, to);
-
-      if (tenantId) query = query.eq('tenant_id', tenantId);
+        .range(from, to), tenantId);
 
       if (apenasCompletos) {
         query = query.or('telefone.neq.,cpf_cnpj.neq.');
@@ -36,8 +34,8 @@ export function useListarClientes(busca = '', pagina = 1, apenasCompletos = fals
       const { data, count, error } = await query;
       if (error) throw error;
 
-      let clientes = (data ?? []).map((c) => {
-        const { motos, ...rest } = c as Record<string, unknown> & { motos?: { id: string; placa: string }[] };
+      let clientes = (data ?? []).map((c: any) => {
+        const { motos, ...rest } = c;
         return {
           ...rest,
           motos_count: Array.isArray(motos) ? motos.length : 0,
@@ -46,25 +44,23 @@ export function useListarClientes(busca = '', pagina = 1, apenasCompletos = fals
       });
 
       if (busca.trim() && clientes.length === 0) {
-        let placaQuery = supabase
+        const placaQuery = tf(supabase
           .from('motos')
           .select('cliente_id')
-          .ilike('placa', `%${busca.trim()}%`);
-        if (tenantId) placaQuery = placaQuery.eq('tenant_id', tenantId);
+          .ilike('placa', `%${busca.trim()}%`), tenantId);
         const { data: placaData } = await placaQuery;
         if (placaData && placaData.length > 0) {
-          const clienteIds = [...new Set(placaData.map(p => p.cliente_id))];
-          let clienteQuery = supabase
+          const clienteIds = [...new Set(placaData.map((p: any) => p.cliente_id))];
+          const clienteQuery = tf(supabase
             .from('clientes')
             .select('*, motos(id, placa)', { count: 'exact' })
             .in('id', clienteIds)
             .order('nome', { ascending: true })
-            .range(from, to);
-          if (tenantId) clienteQuery = clienteQuery.eq('tenant_id', tenantId);
+            .range(from, to), tenantId);
           const { data: clientesByPlaca, count: countByPlaca } = await clienteQuery;
           if (clientesByPlaca) {
-            clientes = clientesByPlaca.map((c) => {
-              const { motos, ...rest } = c as Record<string, unknown> & { motos?: { id: string; placa: string }[] };
+            clientes = clientesByPlaca.map((c: any) => {
+              const { motos, ...rest } = c;
               return { ...rest, motos_count: Array.isArray(motos) ? motos.length : 0, _motos: motos };
             });
             return { data: clientes as unknown as (Cliente & { motos_count: number })[], total: countByPlaca ?? 0 };
@@ -93,14 +89,12 @@ export function useClientePorId(id: string) {
 
       const motos_count = Array.isArray(data.motos) ? data.motos.length : 0;
 
-      let osQuery = supabase
+      const { data: osData } = await tf(supabase
         .from('ordens_servico')
         .select('valor_total')
         .eq('cliente_id', id)
-        .eq('status', 'entregue');
-      if (tenantId) osQuery = osQuery.eq('tenant_id', tenantId);
-      const { data: osData } = await osQuery;
-      const total_gasto = (osData ?? []).reduce((s, o) => s + Number(o.valor_total), 0);
+        .eq('status', 'entregue'), tenantId);
+      const total_gasto = (osData ?? []).reduce((s: number, o: any) => s + Number(o.valor_total), 0);
 
       return { ...data, motos: undefined, motos_count, total_gasto } as unknown as Cliente & { motos_count: number; total_gasto: number };
     },
@@ -130,7 +124,7 @@ export function useCriarCliente() {
   return useMutation({
     mutationFn: async (input: Record<string, string | null>) => {
       const clean = sanitizeCliente(input);
-      const { data, error } = await supabase.from('clientes').insert(withTenant(clean, tenantId)).select().single();
+      const { data, error } = await supabase.from('clientes').insert(wt(clean, tenantId)).select().single();
       if (error) throw error;
       return data;
     },
