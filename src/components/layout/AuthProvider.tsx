@@ -45,12 +45,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      if (event === 'SIGNED_IN' && session) {
-        if (session.user.email === MASTER_EMAIL) {
-          navigate('/admin', { replace: true });
-          return;
-        }
+      // Master email: redirecionar para /admin em qualquer evento (SIGNED_IN ou INITIAL_SESSION)
+      if (session?.user.email === MASTER_EMAIL) {
+        navigate('/admin', { replace: true });
+        return;
+      }
 
+      if (event === 'SIGNED_IN' && session) {
         const current = window.location.pathname;
         const lastRoute = localStorage.getItem('fm:last-route');
         const target = lastRoute && !['/', '/login', '/recuperar-senha', '/admin'].includes(lastRoute)
@@ -83,6 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   if (loading) return <AuthLoadingScreen />;
   if (!usuario) return null;
+
+  // Master email nunca deve renderizar o sistema da oficina
+  if (usuario.email === MASTER_EMAIL) {
+    return <AuthLoadingScreen />;
+  }
 
   return (
     <AuthContext.Provider value={{

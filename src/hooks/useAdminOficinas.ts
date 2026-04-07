@@ -55,7 +55,7 @@ export function useAdminEditarOficina() {
   return useMutation({
     mutationFn: async (updates: Partial<Configuracao> & { id: string }) => {
       const { id, ...rest } = updates;
-      const { error } = await supabase.from('configuracoes').update(rest as Record<string, unknown>).eq('id', id);
+      const { error } = await supabase.from('configuracoes').update(rest as any).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -100,7 +100,7 @@ export function useAdminBloquearOficina() {
         venc.setDate(venc.getDate() + 30);
         updates.data_vencimento_plano = venc.toISOString();
       }
-      const { error } = await supabase.from('configuracoes').update(updates).eq('id', id);
+      const { error } = await supabase.from('configuracoes').update(updates as any).eq('id', id);
       if (error) throw error;
     },
     onSuccess: (_, { liberar }) => {

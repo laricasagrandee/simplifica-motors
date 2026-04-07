@@ -34,7 +34,7 @@ export function useAtualizarConfiguracoes() {
       if ((d as Record<string, unknown>).taxa_cartao_credito_parcelado !== undefined) updates.taxa_cartao_credito_parcelado = (d as Record<string, unknown>).taxa_cartao_credito_parcelado;
       if ((d as Record<string, unknown>).taxas_parcelamento !== undefined) updates.taxas_parcelamento = (d as Record<string, unknown>).taxas_parcelamento;
       if ((d as Record<string, unknown>).garantia_dias_padrao !== undefined) updates.garantia_dias_padrao = (d as Record<string, unknown>).garantia_dias_padrao;
-      const { error } = await supabase.from('configuracoes').update(updates).eq('id', d.id);
+      const { error } = await supabase.from('configuracoes').update(updates as any).eq('id', d.id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['configuracoes'] }); toast({ title: 'Configurações salvas!' }); },
