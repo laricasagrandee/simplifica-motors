@@ -42,7 +42,7 @@ function LoginFormCard() {
 
   useEffect(() => {
     if (searchParams.get('erro') === 'sem-acesso') {
-      setUrlError('Esta conta não está vinculada a nenhuma oficina ativa. Entre em contato com o suporte.');
+      setUrlError('E-mail ou senha inválidos.');
       searchParams.delete('erro');
       setSearchParams(searchParams, { replace: true });
     }
