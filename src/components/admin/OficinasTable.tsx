@@ -28,10 +28,8 @@ interface Props {
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   ativo: { label: 'Ativo', className: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
-  tolerancia: { label: 'Tolerância', className: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
+  aviso: { label: 'Em Aviso', className: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
   bloqueado: { label: 'Bloqueado', className: 'bg-red-500/20 text-red-400 border-red-500/30' },
-  teste_ativo: { label: 'Teste Ativo', className: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-  teste_expirado: { label: 'Teste Expirado', className: 'bg-red-500/20 text-red-400 border-red-500/30' },
 };
 
 export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Props) {
@@ -53,8 +51,7 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
     });
   };
 
-  const needsActivation = (o: OficinaComStatus) =>
-    o.plano === 'teste' || o.status === 'teste_expirado' || o.status === 'bloqueado';
+  const needsRenewal = (o: OficinaComStatus) => o.status === 'aviso' || o.status === 'bloqueado';
 
   return (
     <>
@@ -72,7 +69,6 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
               <TableHead className="text-slate-400">Nome Fantasia</TableHead>
               <TableHead className="text-slate-400 hidden md:table-cell">Responsável</TableHead>
               <TableHead className="text-slate-400 hidden lg:table-cell">CNPJ</TableHead>
-              <TableHead className="text-slate-400">Plano</TableHead>
               <TableHead className="text-slate-400 hidden lg:table-cell">Vencimento</TableHead>
               <TableHead className="text-slate-400">Status</TableHead>
               <TableHead className="text-slate-400 text-right">Ações</TableHead>
@@ -96,13 +92,6 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
                     )}
                   </TableCell>
                   <TableCell className="text-slate-300 hidden lg:table-cell font-mono text-xs">{o.cnpj || '—'}</TableCell>
-                  <TableCell>
-                    {o.plano === 'teste' ? (
-                      <Badge variant="outline" className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Teste</Badge>
-                    ) : (
-                      <span className="text-slate-300 capitalize">{o.plano || '—'}</span>
-                    )}
-                  </TableCell>
                   <TableCell className="text-slate-300 hidden lg:table-cell">
                     {o.data_vencimento_plano ? format(new Date(o.data_vencimento_plano), 'dd/MM/yyyy') : '—'}
                   </TableCell>
@@ -111,15 +100,15 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
-                      {needsActivation(o) && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-400 hover:text-amber-300 hover:bg-slate-700" title="Ativar Plano" onClick={() => setAtivarPlano(o)}>
+                      {needsRenewal(o) && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-400 hover:text-amber-300 hover:bg-slate-700" title="Renovar" onClick={() => setAtivarPlano(o)}>
                           <Zap className="h-3.5 w-3.5" />
                         </Button>
                       )}
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-700" onClick={() => setEditando(o)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                      {o.status === 'bloqueado' || o.status === 'teste_expirado' ? (
+                      {o.status === 'bloqueado' ? (
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-400 hover:text-emerald-300 hover:bg-slate-700" onClick={() => setConfirmacao({ oficina: o, liberar: true })}>
                           <Unlock className="h-3.5 w-3.5" />
                         </Button>
@@ -135,7 +124,7 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
             })}
             {oficinas.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-slate-500 py-8">Nenhuma oficina cadastrada</TableCell>
+                <TableCell colSpan={6} className="text-center text-slate-500 py-8">Nenhuma oficina cadastrada</TableCell>
               </TableRow>
             )}
           </TableBody>

@@ -4,7 +4,7 @@ import { toast } from '@/hooks/use-toast';
 import type { Configuracao } from '@/types/database';
 
 export interface OficinaComStatus extends Configuracao {
-  status: 'ativo' | 'tolerancia' | 'bloqueado' | 'teste_ativo' | 'teste_expirado';
+  status: 'ativo' | 'aviso' | 'bloqueado';
   diasRestantes: number;
 }
 
@@ -21,16 +21,10 @@ function calcularStatus(config: Configuracao): Pick<OficinaComStatus, 'status' |
   const venc = new Date(config.data_vencimento_plano);
   const hoje = new Date();
   const diff = Math.ceil((venc.getTime() - hoje.getTime()) / 86400000);
-  const tolerancia = config.dias_tolerancia || 15;
-  const isTeste = config.plano === 'teste';
-
-  if (isTeste) {
-    if (diff >= 0) return { status: 'teste_ativo', diasRestantes: diff };
-    return { status: 'teste_expirado', diasRestantes: 0 };
-  }
 
   if (diff >= 0) return { status: 'ativo', diasRestantes: diff };
-  if (Math.abs(diff) <= tolerancia) return { status: 'tolerancia', diasRestantes: tolerancia - Math.abs(diff) };
+  const diasAtraso = Math.abs(diff);
+  if (diasAtraso <= 15) return { status: 'aviso', diasRestantes: 15 - diasAtraso };
   return { status: 'bloqueado', diasRestantes: 0 };
 }
 
@@ -119,15 +113,3 @@ export function useAdminBloquearOficina() {
     onError: () => toast({ title: 'Erro na operação', variant: 'destructive' }),
   });
 }
-
-export const PLANOS_CONFIG: Record<string, { label: string; preco: number; maxFunc: number }> = {
-  teste: { label: 'Teste Grátis', preco: 0, maxFunc: 2 },
-  basico: { label: 'Básico', preco: 99, maxFunc: 3 },
-  profissional: { label: 'Profissional', preco: 199, maxFunc: 10 },
-  premium: { label: 'Premium', preco: 399, maxFunc: 50 },
-  enterprise: { label: 'Enterprise', preco: 599, maxFunc: 999 },
-};
-
-export const PLANOS_PRECO: Record<string, number> = Object.fromEntries(
-  Object.entries(PLANOS_CONFIG).map(([k, v]) => [k, v.preco])
-);

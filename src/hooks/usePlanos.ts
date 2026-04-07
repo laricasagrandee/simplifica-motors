@@ -13,6 +13,7 @@ interface PlanoInfo {
 interface BloqueioInfo {
   bloqueado: boolean;
   emTolerancia: boolean;
+  nivel: 'suave' | 'forte' | 'urgente' | null;
   diasRestantes: number;
   mensagem: string;
 }
@@ -41,35 +42,59 @@ export function useVerificarBloqueio() {
         .select('plano_ativo, data_vencimento_plano, dias_tolerancia')
         .limit(1).single();
       if (error) throw error;
-      if (!data?.data_vencimento_plano) return { bloqueado: false, emTolerancia: false, diasRestantes: 999, mensagem: '' };
+      if (!data?.data_vencimento_plano) return { bloqueado: false, emTolerancia: false, nivel: null, diasRestantes: 999, mensagem: '' };
+
       const venc = new Date(data.data_vencimento_plano);
       const hoje = new Date();
       const diff = Math.ceil((venc.getTime() - hoje.getTime()) / 86400000);
-      const tolerancia = data.dias_tolerancia || 15;
-      if (diff >= 0) return { bloqueado: false, emTolerancia: false, diasRestantes: diff, mensagem: '' };
-      if (Math.abs(diff) <= tolerancia) return { bloqueado: false, emTolerancia: true, diasRestantes: tolerancia - Math.abs(diff), mensagem: `Sua assinatura venceu. Você tem ${tolerancia - Math.abs(diff)} dias para renovar.` };
-      return { bloqueado: true, emTolerancia: false, diasRestantes: 0, mensagem: 'Sua assinatura expirou.' };
+
+      // Ainda não venceu
+      if (diff >= 0) return { bloqueado: false, emTolerancia: false, nivel: null, diasRestantes: diff, mensagem: '' };
+
+      const diasAtraso = Math.abs(diff);
+
+      // 1-5 dias: aviso suave
+      if (diasAtraso <= 5) {
+        return {
+          bloqueado: false, emTolerancia: true, nivel: 'suave' as const,
+          diasRestantes: 15 - diasAtraso,
+          mensagem: 'Sua assinatura venceu. Renove para continuar usando sem interrupções.',
+        };
+      }
+
+      // 6-10 dias: aviso forte
+      if (diasAtraso <= 10) {
+        return {
+          bloqueado: false, emTolerancia: true, nivel: 'forte' as const,
+          diasRestantes: 15 - diasAtraso,
+          mensagem: 'Seu acesso será bloqueado em breve. Entre em contato para renovar.',
+        };
+      }
+
+      // 11-15 dias: aviso urgente
+      if (diasAtraso <= 15) {
+        const diasParaBloqueio = 15 - diasAtraso;
+        return {
+          bloqueado: false, emTolerancia: true, nivel: 'urgente' as const,
+          diasRestantes: diasParaBloqueio,
+          mensagem: `Último aviso! Seu acesso será bloqueado em ${diasParaBloqueio} dia${diasParaBloqueio > 1 ? 's' : ''}.`,
+        };
+      }
+
+      // 15+ dias: bloqueado
+      return { bloqueado: true, emTolerancia: false, nivel: null, diasRestantes: 0, mensagem: 'Seu acesso foi suspenso por pendência financeira.' };
     },
     staleTime: 1000 * 60 * 5,
   });
 }
 
-const PLANOS = {
-  basico: { max_funcionarios: 3 },
-  profissional: { max_funcionarios: 10 },
-  premium: { max_funcionarios: 50 },
-  vitalicia: { max_funcionarios: 50 },
-  enterprise: { max_funcionarios: 999 },
-};
-
 export function useTrocarPlano() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ plano, configId }: { plano: string; configId: string }) => {
-      const cfg = PLANOS[plano as keyof typeof PLANOS] || { max_funcionarios: 3 };
+    mutationFn: async ({ configId }: { configId: string }) => {
       const venc = new Date(); venc.setMonth(venc.getMonth() + 1);
       const { error } = await supabase.from('configuracoes').update({
-        plano, max_funcionarios: cfg.max_funcionarios, plano_ativo: true,
+        plano: 'padrao', max_funcionarios: 999, plano_ativo: true,
         data_vencimento_plano: venc.toISOString(),
       }).eq('id', configId);
       if (error) throw error;

@@ -52,10 +52,7 @@ Deno.serve(async (req) => {
       nome_fantasia,
       cnpj,
       telefone_oficina,
-      plano,
       data_vencimento,
-      max_funcionarios,
-      dias_tolerancia,
     } = body;
 
     if (!email || !password || !nome_responsavel || !nome_fantasia) {
@@ -83,18 +80,18 @@ Deno.serve(async (req) => {
 
     const userId = newUser.user.id;
 
-    // 2) Create configuracoes record
+    // 2) Create configuracoes record — single plan, no limits
     const { data: config, error: configError } = await adminClient
       .from("configuracoes")
       .insert({
         nome_fantasia,
         cnpj: cnpj || null,
         telefone: telefone_oficina || null,
-        plano: plano || "teste",
+        plano: "padrao",
         plano_ativo: true,
         data_vencimento_plano: data_vencimento || new Date(Date.now() + 30 * 86400000).toISOString(),
-        max_funcionarios: max_funcionarios || 2,
-        dias_tolerancia: dias_tolerancia ?? 5,
+        max_funcionarios: 999,
+        dias_tolerancia: 15,
       })
       .select("id")
       .single();
