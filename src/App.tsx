@@ -26,7 +26,9 @@ import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import PlanosPage from "./pages/PlanosPage";
 import AgendamentosPage from "./pages/AgendamentosPage";
 import NFPage from "./pages/NFPage";
+import AdminPanelPage from "./pages/AdminPanelPage";
 import NotFound from "./pages/NotFound";
+import { MASTER_EMAIL } from "@/lib/constants";
 
 const queryClient = new QueryClient();
 const LAST_ROUTE_KEY = "fm:last-route";
@@ -45,7 +47,7 @@ function RoutePersistence() {
 
 function RootRedirect() {
   const lastRoute = localStorage.getItem(LAST_ROUTE_KEY);
-  const target = lastRoute && !["/login", "/recuperar-senha", "/"].includes(lastRoute)
+  const target = lastRoute && !["/login", "/recuperar-senha", "/", "/admin"].includes(lastRoute)
     ? lastRoute
     : "/dashboard";
 
@@ -62,6 +64,7 @@ const App = () => (
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/recuperar-senha" element={<RecuperarSenhaPage />} />
+          <Route path="/admin" element={<AdminPanelPage />} />
           <Route path="/*" element={
             <AuthProvider>
               <Routes>

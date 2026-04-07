@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useUsuarioAtual } from '@/hooks/useAuth';
 import { temPermissao, type Acao } from '@/lib/permissions';
+import { MASTER_EMAIL } from '@/lib/constants';
 import { BloqueioProvider } from './BloqueioProvider';
 import type { User } from '@supabase/supabase-js';
 import type { Funcionario, CargoFuncionario } from '@/types/database';
@@ -45,9 +46,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (event === 'SIGNED_IN' && session) {
+        if (session.user.email === MASTER_EMAIL) {
+          navigate('/admin', { replace: true });
+          return;
+        }
+
         const current = window.location.pathname;
         const lastRoute = localStorage.getItem('fm:last-route');
-        const target = lastRoute && !['/', '/login', '/recuperar-senha'].includes(lastRoute)
+        const target = lastRoute && !['/', '/login', '/recuperar-senha', '/admin'].includes(lastRoute)
           ? lastRoute
           : '/dashboard';
 

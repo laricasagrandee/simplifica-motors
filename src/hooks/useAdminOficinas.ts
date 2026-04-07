@@ -1,0 +1,120 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import type { Configuracao } from '@/types/database';
+
+export interface OficinaComStatus extends Configuracao {
+  status: 'ativo' | 'tolerancia' | 'bloqueado';
+  diasRestantes: number;
+}
+
+function calcularStatus(config: Configuracao): Pick<OficinaComStatus, 'status' | 'diasRestantes'> {
+  if (!config.plano_ativo) return { status: 'bloqueado', diasRestantes: 0 };
+  if (!config.data_vencimento_plano) return { status: 'ativo', diasRestantes: 999 };
+
+  const venc = new Date(config.data_vencimento_plano);
+  const hoje = new Date();
+  const diff = Math.ceil((venc.getTime() - hoje.getTime()) / 86400000);
+  const tolerancia = config.dias_tolerancia || 15;
+
+  if (diff >= 0) return { status: 'ativo', diasRestantes: diff };
+  if (Math.abs(diff) <= tolerancia) return { status: 'tolerancia', diasRestantes: tolerancia - Math.abs(diff) };
+  return { status: 'bloqueado', diasRestantes: 0 };
+}
+
+export function useAdminOficinas() {
+  return useQuery<OficinaComStatus[]>({
+    queryKey: ['admin-oficinas'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('configuracoes').select('*');
+      if (error) throw error;
+      return (data as unknown as Configuracao[]).map((c) => ({
+        ...c,
+        ...calcularStatus(c),
+      }));
+    },
+  });
+}
+
+export function useFuncionariosCount() {
+  return useQuery<number>({
+    queryKey: ['admin-funcionarios-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('funcionarios')
+        .select('*', { count: 'exact', head: true })
+        .eq('ativo', true);
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+}
+
+export function useAdminEditarOficina() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (updates: Partial<Configuracao> & { id: string }) => {
+      const { id, ...rest } = updates;
+      const { error } = await supabase.from('configuracoes').update(rest as Record<string, unknown>).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-oficinas'] });
+      toast({ title: 'Oficina atualizada!' });
+    },
+    onError: () => toast({ title: 'Erro ao atualizar', variant: 'destructive' }),
+  });
+}
+
+export function useAdminNovaOficina() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (nome_fantasia: string) => {
+      const venc = new Date();
+      venc.setDate(venc.getDate() + 30);
+      const { error } = await supabase.from('configuracoes').insert({
+        nome_fantasia,
+        plano: 'basico',
+        plano_ativo: true,
+        data_vencimento_plano: venc.toISOString(),
+        max_funcionarios: 3,
+        dias_tolerancia: 15,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-oficinas'] });
+      toast({ title: 'Oficina criada!' });
+    },
+    onError: () => toast({ title: 'Erro ao criar oficina', variant: 'destructive' }),
+  });
+}
+
+export function useAdminBloquearOficina() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, liberar }: { id: string; liberar: boolean }) => {
+      const updates: Record<string, unknown> = { plano_ativo: liberar };
+      if (liberar) {
+        const venc = new Date();
+        venc.setDate(venc.getDate() + 30);
+        updates.data_vencimento_plano = venc.toISOString();
+      }
+      const { error } = await supabase.from('configuracoes').update(updates).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, { liberar }) => {
+      qc.invalidateQueries({ queryKey: ['admin-oficinas'] });
+      toast({ title: liberar ? 'Oficina liberada!' : 'Oficina bloqueada!' });
+    },
+    onError: () => toast({ title: 'Erro na operação', variant: 'destructive' }),
+  });
+}
+
+export const PLANOS_PRECO: Record<string, number> = {
+  basico: 99,
+  profissional: 199,
+  premium: 399,
+  vitalicia: 0,
+  enterprise: 599,
+};
