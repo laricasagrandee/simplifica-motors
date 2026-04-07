@@ -6,23 +6,35 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Gift, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }
 
-function defaultVencimento() {
+type TipoAcesso = 'teste' | 'pago';
+
+const PERIODOS = [
+  { label: '1 mês', dias: 30 },
+  { label: '3 meses', dias: 90 },
+  { label: '6 meses', dias: 180 },
+  { label: '12 meses', dias: 365 },
+];
+
+function calcVencimento(dias: number) {
   const d = new Date();
-  d.setDate(d.getDate() + 30);
+  d.setDate(d.getDate() + dias);
   return d.toISOString().slice(0, 10);
 }
 
 export function NovaOficinaDialog({ open, onOpenChange }: Props) {
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
+  const [tipoAcesso, setTipoAcesso] = useState<TipoAcesso>('teste');
+  const [periodoSelecionado, setPeriodoSelecionado] = useState<number | null>(null);
   const [form, setForm] = useState({
     nome_fantasia: '',
     cnpj: '',
@@ -31,17 +43,32 @@ export function NovaOficinaDialog({ open, onOpenChange }: Props) {
     email: '',
     senha: '',
     telefone_responsavel: '',
-    data_vencimento: defaultVencimento(),
+    data_vencimento: calcVencimento(30),
   });
 
   const set = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
+
+  const handleTipoAcesso = (tipo: TipoAcesso) => {
+    setTipoAcesso(tipo);
+    if (tipo === 'teste') {
+      setForm((prev) => ({ ...prev, data_vencimento: calcVencimento(30) }));
+      setPeriodoSelecionado(null);
+    }
+  };
+
+  const handlePeriodo = (dias: number) => {
+    setPeriodoSelecionado(dias);
+    setForm((prev) => ({ ...prev, data_vencimento: calcVencimento(dias) }));
+  };
 
   const resetForm = () => {
     setForm({
       nome_fantasia: '', cnpj: '', telefone_oficina: '',
       nome_responsavel: '', email: '', senha: '', telefone_responsavel: '',
-      data_vencimento: defaultVencimento(),
+      data_vencimento: calcVencimento(30),
     });
+    setTipoAcesso('teste');
+    setPeriodoSelecionado(null);
   };
 
   const handleCriar = async () => {
@@ -101,6 +128,7 @@ export function NovaOficinaDialog({ open, onOpenChange }: Props) {
         </DialogHeader>
 
         <div className="space-y-5">
+          {/* Dados da Oficina */}
           <div>
             <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Dados da Oficina</h3>
             <div className="space-y-3">
@@ -121,6 +149,7 @@ export function NovaOficinaDialog({ open, onOpenChange }: Props) {
             </div>
           </div>
 
+          {/* Responsável */}
           <div>
             <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Responsável (Admin)</h3>
             <div className="space-y-3">
@@ -145,12 +174,94 @@ export function NovaOficinaDialog({ open, onOpenChange }: Props) {
             </div>
           </div>
 
+          {/* Tipo de Acesso */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Tipo de Acesso</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => handleTipoAcesso('teste')}
+                className={cn(
+                  'rounded-lg border-2 p-4 text-left transition-all',
+                  tipoAcesso === 'teste'
+                    ? 'border-blue-500 bg-blue-500/10'
+                    : 'border-slate-600 bg-slate-700/50 hover:border-slate-500'
+                )}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <Gift className="h-4 w-4 text-blue-400" />
+                  <span className="font-semibold text-white text-sm">Teste Grátis</span>
+                </div>
+                <p className="text-xs text-slate-400">30 dias grátis para experimentar</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleTipoAcesso('pago')}
+                className={cn(
+                  'rounded-lg border-2 p-4 text-left transition-all',
+                  tipoAcesso === 'pago'
+                    ? 'border-emerald-500 bg-emerald-500/10'
+                    : 'border-slate-600 bg-slate-700/50 hover:border-slate-500'
+                )}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <CreditCard className="h-4 w-4 text-emerald-400" />
+                  <span className="font-semibold text-white text-sm">Cliente Pagou</span>
+                </div>
+                <p className="text-xs text-slate-400">Já fez o pagamento</p>
+              </button>
+            </div>
+
+            {tipoAcesso === 'pago' && (
+              <div className="mt-3 space-y-3">
+                <div className="flex gap-2">
+                  {PERIODOS.map((p) => (
+                    <Button
+                      key={p.dias}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePeriodo(p.dias)}
+                      className={cn(
+                        'flex-1 text-xs',
+                        periodoSelecionado === p.dias
+                          ? 'bg-emerald-600 border-emerald-500 text-white hover:bg-emerald-700'
+                          : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
+                      )}
+                    >
+                      {p.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Vencimento */}
           <div>
             <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Vencimento</h3>
             <div>
               <Label className="text-slate-300">Data de vencimento</Label>
-              <Input type="date" value={form.data_vencimento} onChange={(e) => set('data_vencimento', e.target.value)} className="bg-slate-700 border-slate-600 text-white" />
-              <p className="text-xs text-slate-500 mt-1">Padrão: 30 dias a partir de hoje. Após 15 dias do vencimento sem renovação, o acesso será bloqueado.</p>
+              <Input
+                type="date"
+                value={form.data_vencimento}
+                onChange={(e) => set('data_vencimento', e.target.value)}
+                disabled={tipoAcesso === 'teste'}
+                className={cn(
+                  'bg-slate-700 border-slate-600 text-white',
+                  tipoAcesso === 'teste' && 'opacity-60 cursor-not-allowed'
+                )}
+              />
+              {tipoAcesso === 'teste' ? (
+                <p className="text-xs text-blue-400 mt-1">
+                  Teste grátis de 30 dias — acesso até {format(new Date(form.data_vencimento), 'dd/MM/yyyy')}
+                </p>
+              ) : (
+                <p className="text-xs text-emerald-400 mt-1">
+                  Acesso até: {format(new Date(form.data_vencimento), 'dd/MM/yyyy')}
+                </p>
+              )}
             </div>
           </div>
         </div>
