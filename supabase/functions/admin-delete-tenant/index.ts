@@ -66,6 +66,7 @@ Deno.serve(async (req) => {
     const tables = [
       "itens_os", "pagamentos_os", "checklist_os", "fotos_os", "tempo_servico",
       "itens_nf", "notas_fiscais",
+      "itens_venda_pdv", "vendas_pdv", "caixa_diario",
       "agendamentos",
       "ordens_servico", "veiculos", "motos", "clientes",
       "movimentacoes", "pecas", "categorias_pecas",
@@ -75,7 +76,10 @@ Deno.serve(async (req) => {
     ];
 
     for (const table of tables) {
-      await adminClient.from(table).delete().eq("tenant_id", config_id);
+      const { error: tableErr } = await adminClient.from(table).delete().eq("tenant_id", config_id);
+      if (tableErr) {
+        console.warn(`Aviso: falha ao limpar ${table}: ${tableErr.message}`);
+      }
     }
 
     // Delete configuracao
@@ -93,7 +97,14 @@ Deno.serve(async (req) => {
 
     // Delete auth users
     for (const uid of userIds) {
-      await adminClient.auth.admin.deleteUser(uid);
+      try {
+        const { error: delUserErr } = await adminClient.auth.admin.deleteUser(uid);
+        if (delUserErr) {
+          console.warn(`Aviso: falha ao excluir auth user ${uid}: ${delUserErr.message}`);
+        }
+      } catch (e) {
+        console.warn(`Aviso: exceção ao excluir auth user ${uid}: ${e.message}`);
+      }
     }
 
     return new Response(

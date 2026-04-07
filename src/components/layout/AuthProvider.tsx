@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUsuario(session?.user ?? null);
       setLoading(false);
 
@@ -54,6 +54,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (event === 'SIGNED_IN' && session) {
+        // Verificar se o usuário tem funcionário vinculado
+        const { data: func } = await supabase
+          .from('funcionarios')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        if (!func) {
+          // Conta sem vínculo com oficina — fazer logout e mostrar erro
+          await supabase.auth.signOut();
+          navigate('/login?erro=sem-acesso', { replace: true });
+          return;
+        }
+
         const current = window.location.pathname;
         const lastRoute = localStorage.getItem('fm:last-route');
         const target = lastRoute && !['/', '/login', '/recuperar-senha', '/admin'].includes(lastRoute)
