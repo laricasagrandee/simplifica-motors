@@ -3,15 +3,13 @@
  * Use these in all hooks to filter and tag data by tenant.
  */
 
-import type { PostgrestFilterBuilder } from '@supabase/postgrest-js';
-
 /** Add .eq('tenant_id', tenantId) to any Supabase query builder */
-export function addTenantFilter<T extends PostgrestFilterBuilder<any, any, any>>(
+export function addTenantFilter<T extends { eq: (column: string, value: string) => T }>(
   query: T,
   tenantId: string,
 ): T {
   if (!tenantId) return query;
-  return query.eq('tenant_id', tenantId) as T;
+  return query.eq('tenant_id', tenantId);
 }
 
 /** Add tenant_id to an insert payload */
