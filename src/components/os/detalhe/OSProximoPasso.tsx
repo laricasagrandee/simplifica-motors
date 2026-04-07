@@ -44,6 +44,7 @@ function getMsg(os: OrdemServico) {
   return msgs[os.status] ?? '';
 }
 
+// Hooks must always be called before any early return
 export function OSProximoPasso({ os, itens = [], onMudarStatus, onTabChange, loading }: Props) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const { data: config } = useConfiguracoes();
