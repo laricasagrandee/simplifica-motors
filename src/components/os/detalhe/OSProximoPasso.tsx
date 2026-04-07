@@ -58,7 +58,7 @@ export function OSProximoPasso({ os, itens = [], onMudarStatus, onTabChange, loa
     && isBefore(new Date(os.previsao_entrega), new Date());
 
   const veiculoLabel = formatarVeiculoCompleto(os.motos as unknown as Record<string, string> | undefined);
-  const msgPronto = `Olá ${os.clientes?.nome ?? 'Cliente'}! Seu veículo ${veiculoLabel} está pronto para retirada aqui na ${nomeOficina}. O valor total é ${formatarMoeda(os.valor_total ?? 0)}. Aceitamos Pix, cartão e dinheiro. Aguardamos você!`;
+  const msgPronto = `Olá ${os.clientes?.nome ?? 'Cliente'}! Seu veiculo ${veiculoLabel} esta pronto para retirada aqui na ${nomeOficina}. O valor total e ${formatarMoeda(os.valor_total ?? 0)}. Aceitamos Pix, cartao e dinheiro. Aguardamos voce!`;
 
   void onMudarStatus;
   void itens;

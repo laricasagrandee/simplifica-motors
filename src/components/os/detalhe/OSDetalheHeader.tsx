@@ -59,7 +59,7 @@ export function OSDetalheHeader({ os, itens, onMudarStatus, onRecusar, loading }
 
       if (next.status === 'concluida' && telefone) {
         const veiculoInfo = [os.motos?.marca, os.motos?.modelo, os.motos?.placa].filter(Boolean).join(' ');
-        const msg = `Olá${os.clientes?.nome ? `, ${os.clientes.nome}` : ''}! 🔧✅\n\nSeu veículo ${veiculoInfo ? `*${veiculoInfo}* ` : ''}já está *pronto para retirada*.\n\nAguardamos você! 😊`;
+        const msg = `Olá${os.clientes?.nome ? `, ${os.clientes.nome}` : ''}!\n\nSeu veículo ${veiculoInfo ? `*${veiculoInfo}* ` : ''}já está *pronto para retirada*.\n\nAguardamos você!`;
         const url = `https://wa.me/55${telefone}?text=${encodeURIComponent(msg)}`;
 
         if (popup) popup.location.href = url;
