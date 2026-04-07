@@ -1,46 +1,40 @@
 
 
-## Dois problemas encontrados
+## Plano: Corrigir emojis e texto das mensagens WhatsApp
 
-### 1. Veículo aparece vazio na mensagem do WhatsApp
+### Problemas
+1. Emojis como 💳, ✅, 🔧, 😊 aparecem como "�" em alguns dispositivos quando enviados via URL do WhatsApp
+2. Texto "Responda *SIM* para confirmar!" é desnecessário — basta "Gostaria de aprovar o orçamento?"
 
-**Causa**: A mensagem monta `[veiculo.marca, veiculo.modelo, veiculo.placa].filter(Boolean).join(' ')`. Na OS rápida, marca/modelo/placa são strings vazias `''`, que passam pelo `filter(Boolean)` e somem. Resultado: "Veículo: " sem nada.
+### Correções
 
-**Correção**: Adicionar fallback para `tipo_veiculo` (`Moto` ou `Carro`) quando marca/modelo/placa estão vazios.
+**`src/components/os/detalhe/OrcamentoPreviewDialog.tsx`** (mensagem de orçamento)
+- Linha 31: trocar `💳 *Formas de pagamento:*` por `*Formas de pagamento:*`
+- Linha 33: trocar `Gostaria de aprovar o orçamento? Responda *SIM* para confirmar! ✅` por `Gostaria de aprovar o orçamento?`
 
-**Arquivo**: `src/components/os/detalhe/OrcamentoPreviewDialog.tsx`
-- Linha 24: trocar o trecho de montagem do veículo para usar fallback:
-  ```
-  const veiculoLabel = [veiculo.marca, veiculo.modelo, veiculo.placa].filter(Boolean).join(' ')
-    || (veiculo.tipo_veiculo === 'carro' ? 'Carro' : 'Moto');
-  ```
-- Aplicar o mesmo fallback na linha 52 (preview visual)
+**`src/components/os/detalhe/OSDetalheHeader.tsx`** (mensagem de "pronto")
+- Linha 62: remover emojis 🔧✅ e 😊 da mensagem de retirada
 
-### 2. Sininho de notificações sempre mostra alertas (nunca "limpa")
+**`src/components/os/detalhe/OSProximoPasso.tsx`** (mensagem de "pronto" alternativa)
+- Linha 61: manter texto limpo, sem emojis problemáticos
 
-**Causa**: As mensagens de alerta contêm texto dinâmico como "há **4** dias", "há **5** dias". A chave de dismiss é `tipo:mensagem`. Quando o dia muda ou os dados refrescam, a mensagem muda (ex: "há 3 dias" vira "há 4 dias"), a chave antiga não bate mais, e o alerta reaparece como novo. Isso faz o badge mostrar notificações perpetuamente.
+**`src/components/os/detalhe/OSAcoesMenu.tsx`** (menu de ações)
+- Linhas 72-74: mesma limpeza de emojis se houver
 
-**Correção**: Usar uma chave estável que não dependa do texto da mensagem. Adicionar um campo `id` ao tipo `Alerta` baseado em dados fixos (ex: `estoque:id-da-peca`, `os_atrasada:numero-da-os`).
+### Preview do resultado (orçamento)
+```
+*Motoca*
+Orçamento OS-15
+Veículo: Moto
 
-**Arquivos**:
+*Serviços:*
+• Troca de Correia — R$ 65,00
 
-`src/hooks/useDashboardAlertas.ts`
-- Adicionar campo `id` ao tipo `Alerta`
-- Em cada push de alerta, gerar um id estável:
-  - Estoque: `estoque:${p.nome}`
-  - OS atrasada: `os_atrasada:${os.numero}`
-  - Execução longa: `execucao_longa:${os.numero}`
-  - Orçamento pendente: `orcamento_pendente:${os.numero}`
-  - Aguardando retirada: `aguardando_retirada:${os.numero}`
-  - Pagamento: `pagamento:${m.descricao}`
-  - Aniversário: `aniversario:${c.nome}`
-  - Garantia: `garantia:${g.numero}`
+*TOTAL: R$ 65,00*
 
-`src/components/shared/NotificacoesBadge.tsx`
-- Trocar `getAlertKey` para usar `alerta.id` em vez de `${alerta.tipo}:${alerta.mensagem}`
-- Resto da lógica (localStorage, dismiss, sync) continua igual
+*Formas de pagamento:*
+• Pix / Dinheiro: R$ 65,00
 
-### Resultado
-- Mensagem do WhatsApp mostra "Moto" ou "Carro" quando o veículo não tem dados detalhados
-- Notificações marcadas como lidas não reaparecem no dia seguinte só porque o texto "há X dias" mudou
+Gostaria de aprovar o orçamento?
+```
 
