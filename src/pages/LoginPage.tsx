@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { useLogin } from '@/hooks/useAuth';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { LoginHeroPanel } from '@/components/auth/LoginHeroPanel';
@@ -34,12 +34,25 @@ export default function LoginPage() {
 }
 
 function LoginFormCard() {
-  const { login, loading, error, lockedUntil } = useLogin();
+  const { login, loading, error: loginError, lockedUntil } = useLogin();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [urlError, setUrlError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (searchParams.get('erro') === 'sem-acesso') {
+      setUrlError('Esta conta não está vinculada a nenhuma oficina ativa. Entre em contato com o suporte.');
+      searchParams.delete('erro');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const error = urlError || loginError;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setUrlError(null);
     try { await login({ email, senha }); } catch { /* handled */ }
   };
 
