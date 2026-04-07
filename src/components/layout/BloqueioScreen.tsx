@@ -1,6 +1,24 @@
 import { ShieldAlert } from 'lucide-react';
+import { SUPORTE_WHATSAPP, SUPORTE_NOME } from '@/lib/constants';
+import { useConfiguracoes } from '@/hooks/useConfiguracoes';
+
+function formatarTelefone(num: string) {
+  const clean = num.replace(/\D/g, '');
+  if (clean.length === 13) {
+    return `(${clean.slice(2, 4)}) ${clean.slice(4, 9)}-${clean.slice(9)}`;
+  }
+  return num;
+}
 
 export function BloqueioScreen() {
+  const { data: config } = useConfiguracoes();
+  const nomeOficina = config?.nome_fantasia || '';
+
+  const mensagem = encodeURIComponent(
+    `Olá! Preciso renovar meu plano do ${SUPORTE_NOME}.${nomeOficina ? ` Oficina: ${nomeOficina}` : ''}`
+  );
+  const whatsappLink = `https://wa.me/${SUPORTE_WHATSAPP}?text=${mensagem}`;
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center p-6">
       <div className="flex items-baseline gap-0.5 mb-6">
@@ -16,8 +34,8 @@ export function BloqueioScreen() {
       </p>
       <div className="bg-muted rounded-lg p-4 max-w-sm mb-6">
         <p className="text-sm font-medium mb-1">WhatsApp de Suporte</p>
-        <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer" className="text-accent font-mono font-bold text-lg">
-          (11) 99999-9999
+        <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="text-accent font-mono font-bold text-lg">
+          {formatarTelefone(SUPORTE_WHATSAPP)}
         </a>
       </div>
       <div className="bg-surface-secondary rounded-lg p-4 max-w-sm text-left">
