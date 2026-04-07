@@ -16,6 +16,7 @@ import { OSProximoPasso } from './OSProximoPasso';
 import { OSResumoFinanceiro } from './OSResumoFinanceiro';
 import { AddPecaDialog } from './AddPecaDialog';
 import { AddServicoDialog } from './AddServicoDialog';
+import { OrcamentoPreviewDialog } from './OrcamentoPreviewDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAtualizarOS } from '@/hooks/useOSDetalhe';
 import { useItensPorOS, useAdicionarPeca, useAdicionarServico, useRemoverItem } from '@/hooks/useOSItens';
