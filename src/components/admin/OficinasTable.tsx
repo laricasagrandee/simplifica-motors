@@ -19,9 +19,16 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+interface AdminFuncInfo {
+  config_id: string;
+  nome: string;
+  email: string | null;
+}
+
 interface Props {
   oficinas: OficinaComStatus[];
   totalFuncionarios: number;
+  admins?: AdminFuncInfo[];
 }
 
 const statusConfig = {
@@ -30,11 +37,16 @@ const statusConfig = {
   bloqueado: { label: 'Bloqueado', className: 'bg-red-500/20 text-red-400 border-red-500/30' },
 };
 
-export function OficinasTable({ oficinas, totalFuncionarios }: Props) {
+export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Props) {
   const [editando, setEditando] = useState<OficinaComStatus | null>(null);
   const [novaOpen, setNovaOpen] = useState(false);
   const [confirmacao, setConfirmacao] = useState<{ oficina: OficinaComStatus; liberar: boolean } | null>(null);
   const bloquear = useAdminBloquearOficina();
+
+  const getAdminInfo = (configId: string) => {
+    const a = admins.find((x) => x.config_id === configId);
+    return a ? { nome: a.nome, email: a.email || '' } : null;
+  };
 
   const handleConfirmar = () => {
     if (!confirmacao) return;
@@ -57,30 +69,38 @@ export function OficinasTable({ oficinas, totalFuncionarios }: Props) {
           <TableHeader>
             <TableRow className="border-slate-700 hover:bg-transparent">
               <TableHead className="text-slate-400">Nome Fantasia</TableHead>
-              <TableHead className="text-slate-400 hidden md:table-cell">CNPJ</TableHead>
+              <TableHead className="text-slate-400 hidden md:table-cell">Responsável</TableHead>
+              <TableHead className="text-slate-400 hidden lg:table-cell">CNPJ</TableHead>
               <TableHead className="text-slate-400">Plano</TableHead>
               <TableHead className="text-slate-400 hidden lg:table-cell">Vencimento</TableHead>
               <TableHead className="text-slate-400">Status</TableHead>
-              <TableHead className="text-slate-400 hidden md:table-cell">Funcionários</TableHead>
               <TableHead className="text-slate-400 text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {oficinas.map((o) => {
               const sc = statusConfig[o.status];
+              const admin = getAdminInfo(o.id);
               return (
                 <TableRow key={o.id} className="border-slate-700 hover:bg-slate-800/50">
                   <TableCell className="text-white font-medium">{o.nome_fantasia || '—'}</TableCell>
-                  <TableCell className="text-slate-300 hidden md:table-cell font-mono text-xs">{o.cnpj || '—'}</TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {admin ? (
+                      <div>
+                        <p className="text-sm text-slate-200">{admin.nome}</p>
+                        <p className="text-xs text-slate-400 font-mono">{admin.email}</p>
+                      </div>
+                    ) : (
+                      <span className="text-slate-500 text-xs">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-slate-300 hidden lg:table-cell font-mono text-xs">{o.cnpj || '—'}</TableCell>
                   <TableCell className="text-slate-300 capitalize">{o.plano || '—'}</TableCell>
                   <TableCell className="text-slate-300 hidden lg:table-cell">
                     {o.data_vencimento_plano ? format(new Date(o.data_vencimento_plano), 'dd/MM/yyyy') : '—'}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={sc.className}>{sc.label}</Badge>
-                  </TableCell>
-                  <TableCell className="text-slate-300 hidden md:table-cell">
-                    {totalFuncionarios}/{o.max_funcionarios || '∞'}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
@@ -110,7 +130,14 @@ export function OficinasTable({ oficinas, totalFuncionarios }: Props) {
         </Table>
       </div>
 
-      {editando && <EditarOficinaDialog oficina={editando} open={!!editando} onOpenChange={(v) => !v && setEditando(null)} />}
+      {editando && (
+        <EditarOficinaDialog
+          oficina={editando}
+          adminInfo={getAdminInfo(editando.id)}
+          open={!!editando}
+          onOpenChange={(v) => !v && setEditando(null)}
+        />
+      )}
       <NovaOficinaDialog open={novaOpen} onOpenChange={setNovaOpen} />
 
       <AlertDialog open={!!confirmacao} onOpenChange={(v) => !v && setConfirmacao(null)}>
