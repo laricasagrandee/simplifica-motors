@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { format, differenceInDays } from 'date-fns';
-import { Pencil, Lock, Unlock, Plus, RefreshCw } from 'lucide-react';
+import { Pencil, Lock, Unlock, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { EditarOficinaDialog } from './EditarOficinaDialog';
 import { NovaOficinaDialog } from './NovaOficinaDialog';
-import { useAdminBloquearOficina, useAdminEditarOficina } from '@/hooks/useAdminOficinas';
+import { useAdminBloquearOficina, useAdminEditarOficina, useAdminExcluirOficina } from '@/hooks/useAdminOficinas';
 import type { OficinaComStatus } from '@/hooks/useAdminOficinas';
 import { normalizarPlano, type PlanoSlug } from '@/lib/planos';
 import { cn } from '@/lib/utils';
@@ -62,8 +62,10 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
   const [novaOpen, setNovaOpen] = useState(false);
   const [renovarOficina, setRenovarOficina] = useState<OficinaComStatus | null>(null);
   const [confirmacao, setConfirmacao] = useState<{ oficina: OficinaComStatus; liberar: boolean } | null>(null);
+  const [excluirOficina, setExcluirOficina] = useState<OficinaComStatus | null>(null);
   const bloquear = useAdminBloquearOficina();
   const editar = useAdminEditarOficina();
+  const excluir = useAdminExcluirOficina();
 
   const getAdminInfo = (configId: string) => {
     const a = admins.find((x) => x.config_id === configId);
@@ -168,6 +170,9 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
                           <Lock className="h-3.5 w-3.5" />
                         </Button>
                       )}
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-slate-700" title="Excluir" onClick={() => setExcluirOficina(o)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -225,6 +230,26 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
             <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600">Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmar} className={confirmacao?.liberar ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}>
               {confirmacao?.liberar ? 'Liberar' : 'Bloquear'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!excluirOficina} onOpenChange={(v) => !v && setExcluirOficina(null)}>
+        <AlertDialogContent className="bg-slate-800 border-slate-700 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Oficina</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              Tem certeza que deseja EXCLUIR "{excluirOficina?.nome_fantasia}"? Esta ação é irreversível. Todos os dados serão perdidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { if (excluirOficina) excluir.mutate(excluirOficina.id, { onSuccess: () => setExcluirOficina(null) }); }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Excluir permanentemente
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
