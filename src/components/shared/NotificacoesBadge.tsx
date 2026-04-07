@@ -59,6 +59,7 @@ export function NotificacoesBadge() {
   const [dismissed, setDismissed] = useState<Set<string>>(() => readDismissedAlerts());
 
   useEffect(() => {
+    if (alertas.length === 0) return;
     const currentKeys = new Set(alertas.map(getAlertKey));
 
     setDismissed((prev) => {
