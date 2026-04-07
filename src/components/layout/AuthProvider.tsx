@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .maybeSingle();
 
         if (!func) {
-          // Conta sem vínculo com oficina — fazer logout e mostrar erro
+          // Conta órfã (oficina deletada) — logout silencioso e mostrar erro genérico
           await supabase.auth.signOut();
           navigate('/login?erro=sem-acesso', { replace: true });
           return;
