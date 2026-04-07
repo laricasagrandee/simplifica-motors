@@ -65,10 +65,12 @@ Deno.serve(async (req) => {
     // Delete linked data in order (child tables first)
     const tables = [
       "itens_os", "pagamentos_os", "checklist_os", "fotos_os", "tempo_servico",
+      "itens_nf", "notas_fiscais",
+      "agendamentos",
       "ordens_servico", "veiculos", "motos", "clientes",
       "movimentacoes", "pecas", "categorias_pecas",
-      "agendamentos", "metas_funcionario", "comissoes",
-      "notas_fiscais", "itens_nf", "inventarios", "audit_log",
+      "metas_funcionario", "comissoes",
+      "inventarios", "audit_log",
       "funcionarios",
     ];
 
