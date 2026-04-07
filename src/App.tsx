@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/components/layout/AuthProvider";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
+import { supabase } from "@/integrations/supabase/client";
 
 import LoginPage from "./pages/LoginPage";
 import VeiculosPage from "./pages/VeiculosPage";
@@ -46,10 +47,69 @@ function RoutePersistence() {
 }
 
 function RootRedirect() {
-  const lastRoute = localStorage.getItem(LAST_ROUTE_KEY);
-  const target = lastRoute && !["/login", "/recuperar-senha", "/", "/admin"].includes(lastRoute)
-    ? lastRoute
-    : "/dashboard";
+  const [target, setTarget] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    void supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+
+      if (data.session?.user.email === MASTER_EMAIL) {
+        setTarget("/admin");
+        return;
+      }
+
+      const lastRoute = localStorage.getItem(LAST_ROUTE_KEY);
+      setTarget(
+        lastRoute && !["/login", "/recuperar-senha", "/", "/admin"].includes(lastRoute)
+          ? lastRoute
+          : "/dashboard",
+      );
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (!target) return null;
+
+  return <Navigate to={target} replace />;
+}
+
+function AdminRoute() {
+  const [target, setTarget] = useState<string | null>(null);
+  const [authorized, setAuthorized] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    void supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+
+      const user = data.session?.user;
+
+      if (!user) {
+        setTarget("/login");
+        return;
+      }
+
+      if (user.email !== MASTER_EMAIL) {
+        setTarget("/dashboard");
+        return;
+      }
+
+      setAuthorized(true);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (authorized) return <AdminPanelPage />;
+  if (!target) return null;
 
   return <Navigate to={target} replace />;
 }
@@ -64,7 +124,7 @@ const App = () => (
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/recuperar-senha" element={<RecuperarSenhaPage />} />
-          <Route path="/admin" element={<AdminPanelPage />} />
+          <Route path="/admin" element={<AdminRoute />} />
           <Route path="/*" element={
             <AuthProvider>
               <Routes>

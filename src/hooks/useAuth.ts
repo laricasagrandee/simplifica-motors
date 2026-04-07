@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeEmail } from '@/lib/sanitize';
+import { MASTER_EMAIL } from '@/lib/constants';
 import type { User } from '@supabase/supabase-js';
 import type { Funcionario } from '@/types/database';
 
@@ -71,7 +72,7 @@ export function useLogin() {
       setLockedUntil(null);
       queryClient.invalidateQueries({ queryKey: ['auth-session'] });
       queryClient.invalidateQueries({ queryKey: ['login-session-check'] });
-      navigate('/dashboard', { replace: true });
+      navigate(cleanEmail === MASTER_EMAIL ? '/admin' : '/dashboard', { replace: true });
       return data;
     } catch (err) {
       const authErr = err as Error;
