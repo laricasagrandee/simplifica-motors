@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: funcionario, isLoading: funcionarioLoading } = useUsuarioAtual(usuario?.id);
 
   const cargo = funcionario?.cargo as CargoFuncionario | undefined;
-  const tenantId = (funcionario as Record<string, unknown> | null)?.tenant_id as string | null ?? null;
+  const tenantId = funcionario?.tenant_id ?? null;
 
   const checkPermissao = useCallback(
     (acao: Acao) => temPermissao(cargo, acao),
