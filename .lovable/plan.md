@@ -1,24 +1,43 @@
 
 
-## Plano: Melhorar tela de usuario sem acesso
+## Plano: Corrigir fluxo de login com conta excluida
 
 ### Problema
 
-Quando o usuario faz login com credenciais corretas mas nao tem registro de `funcionario` (ex: oficina foi excluida), ele cai na tela "Aguardando liberacao" que e confusa — parece um erro.
+Dois bugs:
 
-### Solucao
+1. **ProtectedRoute bloqueia antes de AppLayout**: Quando o usuario loga mas nao tem `funcionario`, `cargo` e `undefined`, `temPermissao()` retorna `false`, e ProtectedRoute mostra "Acesso Restrito". Mas deveria deixar passar para o AppLayout mostrar "Acesso nao disponivel" (com botao WhatsApp + Voltar ao Login).
 
-Melhorar a pagina `AguardandoAprovacaoPage` para ser mais clara e ter um botao "Voltar ao Login" em vez de so "Sair". Tambem mudar o texto para distinguir entre "conta nao vinculada" e dar instrucoes claras.
+2. **Auth users podem nao estar sendo deletados**: A edge function `admin-delete-tenant` deleta auth users no final, mas se algum erro silencioso ocorre, o usuario continua conseguindo logar.
 
 ### Mudancas
 
-**`src/pages/AguardandoAprovacaoPage.tsx`**
+**1. `src/components/shared/ProtectedRoute.tsx`**
 
-- Titulo: "Acesso nao disponivel"
-- Texto: "Sua conta nao esta vinculada a nenhuma oficina ativa. Se voce acredita que isso e um erro, entre em contato com o suporte."
-- Botao "Sair" renomeado para "Voltar ao Login"
-- Manter botao WhatsApp
+Adicionar check: se `funcionario` e `null` (nao apenas loading), nao bloquear — deixar children renderizar. O AppLayout vai capturar esse caso e mostrar a tela correta.
+
+```typescript
+const { temPermissao, funcionarioLoading, funcionario } = useAuthContext();
+
+if (funcionarioLoading) return <>{children}</>;
+
+// Se nao tem funcionario, deixa AppLayout lidar (mostra AguardandoAprovacao)
+if (!funcionario) return <>{children}</>;
+
+if (!temPermissao(permissao)) {
+  return <AccessDenied />;
+}
+```
+
+**2. `src/components/layout/AuthProvider.tsx`** — expor `funcionario` no contexto (ja expoe, ok)
+
+### Resultado
+
+- Login com conta excluida (se auth user ainda existe) → tela "Acesso nao disponivel" com botao WhatsApp
+- Login com credenciais invalidas → erro "E-mail ou senha invalidos" (ja funciona)
+- Login normal com funcionario → dashboard (ja funciona)
+- Funcionario sem permissao para rota → "Acesso Restrito" (ja funciona)
 
 ### Arquivo alterado
-- `src/pages/AguardandoAprovacaoPage.tsx`
+- `src/components/shared/ProtectedRoute.tsx`
 
