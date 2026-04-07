@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { MASTER_EMAIL } from '@/lib/constants';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { AdminResumoCards } from '@/components/admin/AdminResumoCards';
-import { AdminConfigPrecos } from '@/components/admin/AdminConfigPrecos';
 import { OficinasTable } from '@/components/admin/OficinasTable';
 import { useAdminOficinas, useFuncionariosCount } from '@/hooks/useAdminOficinas';
 import { Loader2 } from 'lucide-react';
@@ -67,14 +66,7 @@ export default function AdminPanelPage() {
           <>
             <AdminResumoCards oficinas={oficinas || []} />
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              <div className="lg:col-span-3">
-                <OficinasTable oficinas={oficinas || []} totalFuncionarios={totalFuncionarios || 0} admins={admins} />
-              </div>
-              <div>
-                <AdminConfigPrecos />
-              </div>
-            </div>
+            <OficinasTable oficinas={oficinas || []} totalFuncionarios={totalFuncionarios || 0} admins={admins} />
           </>
         )}
       </main>

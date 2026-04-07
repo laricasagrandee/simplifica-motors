@@ -48,14 +48,7 @@ export function AdminConfigPrecos() {
     v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
-    <Card className="bg-slate-800 border-slate-700">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-white flex items-center gap-2 text-base">
-          <Settings className="h-5 w-5 text-blue-400" />
-          Configurações de Preço
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-5">
+    <div className="space-y-5">
         {/* Valor mensal */}
         <div className="flex items-end gap-4">
           <div className="flex-1">
@@ -122,7 +115,6 @@ export function AdminConfigPrecos() {
         >
           Salvar Preços
         </Button>
-      </CardContent>
-    </Card>
+      </div>
   );
 }

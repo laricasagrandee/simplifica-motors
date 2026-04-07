@@ -70,6 +70,7 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
               <TableHead className="text-slate-400 hidden md:table-cell">Responsável</TableHead>
               <TableHead className="text-slate-400 hidden lg:table-cell">CNPJ</TableHead>
               <TableHead className="text-slate-400 hidden lg:table-cell">Vencimento</TableHead>
+              <TableHead className="text-slate-400 hidden md:table-cell">Plano</TableHead>
               <TableHead className="text-slate-400">Status</TableHead>
               <TableHead className="text-slate-400 text-right">Ações</TableHead>
             </TableRow>
@@ -94,6 +95,21 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
                   <TableCell className="text-slate-300 hidden lg:table-cell font-mono text-xs">{o.cnpj || '—'}</TableCell>
                   <TableCell className="text-slate-300 hidden lg:table-cell">
                     {o.data_vencimento_plano ? format(new Date(o.data_vencimento_plano), 'dd/MM/yyyy') : '—'}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {(() => {
+                      const plano = (o as any).plano || 'padrao';
+                      const planoConfig: Record<string, { label: string; cls: string }> = {
+                        teste: { label: 'Teste', cls: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+                        basico: { label: 'Básico', cls: 'bg-slate-500/20 text-slate-300 border-slate-500/30' },
+                        profissional: { label: 'Profissional', cls: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+                        premium: { label: 'Premium', cls: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+                        enterprise: { label: 'Enterprise', cls: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
+                        padrao: { label: 'Padrão', cls: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+                      };
+                      const pc = planoConfig[plano] || planoConfig.padrao;
+                      return <Badge variant="outline" className={pc.cls}>{pc.label}</Badge>;
+                    })()}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={sc.className}>{sc.label}</Badge>
@@ -124,7 +140,7 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
             })}
             {oficinas.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-slate-500 py-8">Nenhuma oficina cadastrada</TableCell>
+                <TableCell colSpan={7} className="text-center text-slate-500 py-8">Nenhuma oficina cadastrada</TableCell>
               </TableRow>
             )}
           </TableBody>
