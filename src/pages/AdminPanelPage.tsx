@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { MASTER_EMAIL } from '@/lib/constants';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { AdminResumoCards } from '@/components/admin/AdminResumoCards';
+import { AdminConfigPrecos } from '@/components/admin/AdminConfigPrecos';
 import { OficinasTable } from '@/components/admin/OficinasTable';
 import { useAdminOficinas, useFuncionariosCount } from '@/hooks/useAdminOficinas';
 import { Loader2 } from 'lucide-react';
@@ -25,14 +26,10 @@ export default function AdminPanelPage() {
   const { data: oficinas, isLoading } = useAdminOficinas();
   const { data: totalFuncionarios } = useFuncionariosCount();
 
-  // Fetch admins for each oficina
   const [admins, setAdmins] = useState<{ config_id: string; nome: string; email: string }[]>([]);
 
   useEffect(() => {
     if (!oficinas || oficinas.length === 0) return;
-    // For each oficina, find its admin funcionario
-    // Since there's no config_id FK, we use a heuristic:
-    // Query all admin funcionarios and match them to configs
     supabase
       .from('funcionarios')
       .select('id, nome, email, cargo')
@@ -40,8 +37,6 @@ export default function AdminPanelPage() {
       .eq('ativo', true)
       .then(({ data }) => {
         if (!data) return;
-        // If single-tenant (1 config), all admins belong to it
-        // For multi-tenant, we'd need a config_id column
         if (oficinas.length === 1 && data.length > 0) {
           setAdmins(data.map((f) => ({
             config_id: oficinas[0].id,
@@ -49,8 +44,6 @@ export default function AdminPanelPage() {
             email: f.email || '',
           })));
         } else {
-          // Best effort: map first admin to first config, etc.
-          // This is a limitation without config_id FK
           setAdmins(data.map((f, i) => ({
             config_id: oficinas[i]?.id || '',
             nome: f.nome,
@@ -73,7 +66,15 @@ export default function AdminPanelPage() {
         ) : (
           <>
             <AdminResumoCards oficinas={oficinas || []} />
-            <OficinasTable oficinas={oficinas || []} totalFuncionarios={totalFuncionarios || 0} admins={admins} />
+
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              <div className="lg:col-span-3">
+                <OficinasTable oficinas={oficinas || []} totalFuncionarios={totalFuncionarios || 0} admins={admins} />
+              </div>
+              <div>
+                <AdminConfigPrecos />
+              </div>
+            </div>
           </>
         )}
       </main>

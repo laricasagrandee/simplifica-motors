@@ -1,6 +1,8 @@
-import { Building2, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import { Building2, CheckCircle, AlertTriangle, XCircle, DollarSign } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import type { OficinaComStatus } from '@/hooks/useAdminOficinas';
+import { getAdminPrecos } from './AdminConfigPrecos';
+import { formatarMoeda } from '@/lib/formatters';
 
 interface Props {
   oficinas: OficinaComStatus[];
@@ -10,16 +12,19 @@ export function AdminResumoCards({ oficinas }: Props) {
   const ativas = oficinas.filter((o) => o.status === 'ativo').length;
   const emAviso = oficinas.filter((o) => o.status === 'aviso').length;
   const bloqueadas = oficinas.filter((o) => o.status === 'bloqueado').length;
+  const precos = getAdminPrecos();
+  const receitaEstimada = ativas * precos.valorMensal;
 
   const cards = [
-    { label: 'Total de Oficinas', value: oficinas.length, icon: Building2, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-    { label: 'Ativas', value: ativas, icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-    { label: 'Em Aviso', value: emAviso, icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-    { label: 'Bloqueadas', value: bloqueadas, icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10' },
+    { label: 'Total de Oficinas', value: String(oficinas.length), icon: Building2, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+    { label: 'Ativas', value: String(ativas), icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+    { label: 'Em Aviso', value: String(emAviso), icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+    { label: 'Bloqueadas', value: String(bloqueadas), icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10' },
+    { label: 'Receita Estimada/mês', value: formatarMoeda(receitaEstimada), icon: DollarSign, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
       {cards.map((c) => (
         <Card key={c.label} className="bg-slate-800 border-slate-700">
           <CardContent className="p-4 flex items-center gap-3">
