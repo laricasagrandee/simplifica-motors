@@ -9,6 +9,7 @@ import { NovaOficinaDialog } from './NovaOficinaDialog';
 import { AtivarPlanoDialog } from './AtivarPlanoDialog';
 import { useAdminBloquearOficina } from '@/hooks/useAdminOficinas';
 import type { OficinaComStatus } from '@/hooks/useAdminOficinas';
+import { normalizarPlano, type PlanoSlug } from '@/lib/planos';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -30,6 +31,14 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   ativo: { label: 'Ativo', className: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
   aviso: { label: 'Em Aviso', className: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
   bloqueado: { label: 'Bloqueado', className: 'bg-red-500/20 text-red-400 border-red-500/30' },
+};
+
+const planoConfig: Record<PlanoSlug, { label: string; cls: string }> = {
+  teste: { label: 'Teste', cls: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+  basico: { label: 'Básico', cls: 'bg-slate-500/20 text-slate-300 border-slate-500/30' },
+  profissional: { label: 'Profissional', cls: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+  premium: { label: 'Premium', cls: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+  enterprise: { label: 'Enterprise', cls: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
 };
 
 export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Props) {
@@ -98,15 +107,8 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     {(() => {
-                      const plano = (o as any).plano || 'basico';
-                      const planoConfig: Record<string, { label: string; cls: string }> = {
-                        teste: { label: 'Teste', cls: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-                        basico: { label: 'Básico', cls: 'bg-slate-500/20 text-slate-300 border-slate-500/30' },
-                        profissional: { label: 'Profissional', cls: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
-                        premium: { label: 'Premium', cls: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
-                        enterprise: { label: 'Enterprise', cls: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
-                      };
-                      const pc = planoConfig[plano] || planoConfig.basico;
+                      const plano = normalizarPlano(o.plano);
+                      const pc = planoConfig[plano];
                       return <Badge variant="outline" className={pc.cls}>{pc.label}</Badge>;
                     })()}
                   </TableCell>

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { normalizarPlano } from '@/lib/planos';
 
 interface PlanoInfo {
   plano: string;
@@ -27,7 +28,14 @@ export function usePlanoAtual() {
         .select('plano, plano_ativo, data_vencimento_plano, dias_tolerancia, max_funcionarios')
         .limit(1).single();
       if (error) throw error;
-      return data as PlanoInfo;
+
+      return {
+        plano: normalizarPlano(data?.plano),
+        plano_ativo: data?.plano_ativo ?? true,
+        data_vencimento_plano: data?.data_vencimento_plano ?? null,
+        dias_tolerancia: data?.dias_tolerancia ?? 15,
+        max_funcionarios: data?.max_funcionarios ?? 999,
+      } as PlanoInfo;
     },
     staleTime: 1000 * 60 * 5,
   });
@@ -94,11 +102,11 @@ export function useTrocarPlano() {
     mutationFn: async ({ configId }: { configId: string }) => {
       const venc = new Date(); venc.setMonth(venc.getMonth() + 1);
       const { error } = await supabase.from('configuracoes').update({
-        plano: 'basico', max_funcionarios: 999, plano_ativo: true,
+        max_funcionarios: 999, plano_ativo: true, dias_tolerancia: 15,
         data_vencimento_plano: venc.toISOString(),
       }).eq('id', configId);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['plano-atual'] }); qc.invalidateQueries({ queryKey: ['verificar-bloqueio'] }); toast({ title: 'Plano atualizado!' }); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['plano-atual'] }); qc.invalidateQueries({ queryKey: ['verificar-bloqueio'] }); toast({ title: 'Acesso renovado!' }); },
   });
 }
