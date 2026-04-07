@@ -1,68 +1,119 @@
 
-Problema identificado: o erro não é genérico de Edge Function; ele acontece especificamente no insert em `configuracoes` porque o campo `plano` está recebendo um valor que não bate com o `CHECK` do banco. O código atual mostrado no repo já usa `plano: "basico"` na function, então há dois cenários prováveis: a function publicada ainda está antiga, ou o projeto continua misturando o valor inválido `padrao` em outros fluxos e o modelo ficou inconsistente.
 
-### O que eu implementaria
+## Plano: Multi-tenant — Separar dados por oficina
 
-1. Centralizar os valores de plano permitidos
-- Criar uma constante compartilhada no frontend com os slugs válidos do banco:
-  - `teste`, `basico`, `profissional`, `premium`, `enterprise`
-- Remover o uso de `padrao` como fallback visual ou valor salvo.
+Este e o maior refactor do projeto. Cada oficina so vera seus proprios dados. O plano esta dividido em etapas claras.
 
-2. Corrigir a Edge Function `admin-create-tenant`
-- Garantir que o insert em `configuracoes` use apenas um valor aceito pelo banco.
-- Como seu fluxo comercial atual é teste grátis na criação, o ideal é usar `plano: "teste"` na criação da oficina nova.
-- Adicionar validação explícita e mensagem melhor caso algum valor inválido seja enviado no futuro.
+---
 
-3. Corrigir outros pontos que ainda escrevem `padrao`
-- `src/hooks/usePlanos.ts`: hoje o `useTrocarPlano` faz update com `plano: 'padrao'`; isso também quebrará no banco.
-- `src/components/admin/AtivarPlanoDialog.tsx`: hoje a renovação também grava `plano: 'padrao'`.
-- Ajustar esses fluxos para:
-  - não trocar o plano ao renovar, ou
-  - usar um valor válido já existente.
-- Como você disse que hoje é plano único, a opção mais segura é renovar sem sobrescrever `plano`.
+### ETAPA 1 — Migracao SQL (voce roda manualmente no Supabase)
 
-4. Corrigir fallbacks visuais do painel
-- `src/components/admin/OficinasTable.tsx` usa fallback `padrao` para badge.
-- Trocar por fallback seguro, como `teste` ou `basico`, apenas para exibição.
-- Isso evita inconsistência visual e reduz risco de alguém copiar essa lógica para update/insert.
+Gero um arquivo SQL que voce cola no SQL Editor do Supabase. Ele faz:
 
-5. Alinhar telas que ainda assumem múltiplos planos
-- `src/components/configuracoes/ConfigPlanoAtual.tsx`
-- `src/components/planos/PlanosComparativo.tsx`
-- `src/pages/PlanosPage.tsx`
-- Se o produto agora é “plano único com teste + renovação”, simplificar essas telas para refletirem a regra atual ou pelo menos impedir updates com valores antigos/inválidos.
+1. **Adiciona coluna `tenant_id` (uuid, nullable, FK para configuracoes.id)** nas tabelas:
+   - clientes, motos, ordens_servico, os_itens, os_fotos, os_pagamentos, os_tempo_servico
+   - pecas, movimentacoes, caixa, vendas_pdv, vendas_pdv_itens, notas_fiscais
+   - estoque_movimentacoes, agendamentos, inventarios, inventario_itens
+   - metas_mecanico, funcionarios
 
-### Ordem de execução recomendada
+2. **Preenche dados existentes**: seta o tenant_id de todos os registros atuais com o ID da primeira configuracao existente
 
-1. Corrigir a Edge Function para `teste` ou outro valor aceito
-2. Corrigir `usePlanos.ts` e `AtivarPlanoDialog.tsx` para nunca salvar `padrao`
-3. Corrigir fallbacks de UI
-4. Revisar as telas de plano para consistência do produto
-5. Re-deploy da Edge Function e teste completo do fluxo “Nova Oficina”
+3. **Cria indice** em cada tabela no campo tenant_id para performance
 
-### Resultado esperado
-- Criar oficina deixa de falhar no insert de `configuracoes`
-- Renovar oficina também deixa de correr risco de quebrar pelo mesmo motivo
-- O painel master para de usar o valor inválido `padrao`
-- A regra de negócio fica consistente entre banco, Edge Function e interface
+Nao adiciona em: `configuracoes` (ela E o tenant), `audit_log` (log global)
 
-### Detalhes técnicos
-Arquivos mais críticos:
-- `supabase/functions/admin-create-tenant/index.ts`
-- `src/hooks/usePlanos.ts`
-- `src/components/admin/AtivarPlanoDialog.tsx`
-- `src/components/admin/OficinasTable.tsx`
-- `src/components/configuracoes/ConfigPlanoAtual.tsx`
-- `src/pages/PlanosPage.tsx`
+---
 
-Causa raiz resumida:
-```text
-Banco aceita apenas alguns valores em configuracoes.plano
-            +
-Código ainda mistura um valor legado/inválido: "padrao"
-            =
-INSERT/UPDATE quebra com check constraint
+### ETAPA 2 — Hook `useTenantId` + AuthContext
+
+**Arquivo novo: `src/hooks/useTenantId.ts`**
+- Exporta `useTenantId()` que le o tenant_id do funcionario logado via AuthContext
+
+**Editar `src/types/database.ts`**
+- Adiciona `tenant_id?: string | null` nos tipos: Funcionario, Cliente, Peca, OrdemServico, Movimentacao, Caixa, VendaPDV, NotaFiscal, etc.
+
+**Editar `src/components/layout/AuthProvider.tsx`**
+- Adiciona `tenantId: string | null` no AuthContextType
+- Apos buscar o funcionario, extrai `funcionario.tenant_id` e expoe no contexto
+- Se funcionario existe mas nao tem tenant_id, mostra tela "Aguardando liberacao"
+
+---
+
+### ETAPA 3 — Filtrar TODAS as queries
+
+Crio helpers centrais:
+
+```typescript
+// src/lib/tenantHelper.ts
+export function addTenantFilter(query, tenantId) {
+  return tenantId ? query.eq('tenant_id', tenantId) : query;
+}
 ```
 
-Observação importante:
-mesmo que o arquivo local da Edge Function já tenha sido ajustado, o erro continuará até a versão corrigida estar publicada no Supabase. Então o plano inclui explicitamente validar o código e depois re-publicar a function.
+Edito **todos os ~40 hooks** para:
+- **SELECTs**: adicionar `.eq('tenant_id', tenantId)` 
+- **INSERTs**: adicionar `tenant_id` no payload
+
+Hooks afetados (agrupados):
+
+| Grupo | Hooks |
+|-------|-------|
+| Clientes | useClientes, useClienteOS, useAniversariantes |
+| Veiculos | useVeiculos, useMotos, useHistoricoVeiculo |
+| OS | useOS, useOSDetalhe, useOSItens, useOSFotos, useOSPagamentos, useOSChecklist, useTempoServico |
+| Pecas | usePecas, useEstoque, useInventario, useEtiquetas, useCategoriasPecas |
+| Financeiro | useFinanceiro, useMovimentacoes, useCaixa, useCaixaStatus, useContasPagar, useContasReceber, useFinanceiroCharts |
+| PDV | usePDV |
+| NF | useNF, useNFCompleta |
+| Funcionarios | useFuncionarios, useComissao, useMetas |
+| Agendamentos | useAgendamentos |
+| Dashboard | useDashboardMetrics, useDashboardCharts, useDashboardOS, useDashboardStats, useDashboardAlertas, useDashboardRanking, useDashboardExtras |
+| Relatorios | useRelatorios, useRelatorioAvancado, useRelatorioRecusas, useCMV, useDRE |
+| Config | useConfiguracoes (busca por tenant_id em vez de .limit(1)) |
+
+**Padrao em cada hook:**
+```typescript
+const tenantId = useTenantId();
+// SELECT: query.eq('tenant_id', tenantId)
+// INSERT: { ...data, tenant_id: tenantId }
+```
+
+---
+
+### ETAPA 4 — Edge Function `admin-create-tenant`
+
+Editar `supabase/functions/admin-create-tenant/index.ts`:
+- Apos criar `configuracoes` e obter `config.id`, usar esse ID como `tenant_id` no insert de `funcionarios`
+
+```typescript
+await adminClient.from("funcionarios").insert({
+  ...dados,
+  tenant_id: config.id  // vincula funcionario a oficina
+});
+```
+
+---
+
+### ETAPA 5 — Prompt 2 (Painel Master melhorado)
+
+Apos multi-tenant funcionando:
+- Tipo de acesso na criacao (teste gratis vs pago com periodos)
+- Botoes de renovacao na edicao e na tabela
+- Cores de vencimento na tabela
+
+---
+
+### Ordem de execucao
+
+1. Gero o SQL da migracao — voce roda no Supabase
+2. Atualizo types em `database.ts`
+3. Crio `useTenantId` hook + atualizo AuthProvider
+4. Crio `tenantHelper.ts`
+5. Edito todos os hooks (maior volume de trabalho)
+6. Atualizo Edge Function
+7. Testa: cria 2 oficinas, loga em cada, confirma isolamento
+
+### Observacao importante
+
+Como o `tenant_id` comeca nullable, o sistema continua funcionando durante a migracao. Depois de tudo pronto e testado, pode-se tornar NOT NULL com um segundo SQL.
+
