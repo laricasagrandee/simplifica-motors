@@ -1,59 +1,68 @@
 
+Problema identificado: o erro não é genérico de Edge Function; ele acontece especificamente no insert em `configuracoes` porque o campo `plano` está recebendo um valor que não bate com o `CHECK` do banco. O código atual mostrado no repo já usa `plano: "basico"` na function, então há dois cenários prováveis: a function publicada ainda está antiga, ou o projeto continua misturando o valor inválido `padrao` em outros fluxos e o modelo ficou inconsistente.
 
-## Plano: Resolver erro "Failed to send a request to the Edge Function"
+### O que eu implementaria
 
-### Problema
+1. Centralizar os valores de plano permitidos
+- Criar uma constante compartilhada no frontend com os slugs válidos do banco:
+  - `teste`, `basico`, `profissional`, `premium`, `enterprise`
+- Remover o uso de `padrao` como fallback visual ou valor salvo.
 
-O erro "Failed to send a request to the Edge Function" significa que a function `admin-create-tenant` **nao foi deployada** no Supabase. O codigo existe no repositorio, mas precisa estar rodando no servidor Supabase para funcionar.
+2. Corrigir a Edge Function `admin-create-tenant`
+- Garantir que o insert em `configuracoes` use apenas um valor aceito pelo banco.
+- Como seu fluxo comercial atual é teste grátis na criação, o ideal é usar `plano: "teste"` na criação da oficina nova.
+- Adicionar validação explícita e mensagem melhor caso algum valor inválido seja enviado no futuro.
 
-### O que precisa ser feito
+3. Corrigir outros pontos que ainda escrevem `padrao`
+- `src/hooks/usePlanos.ts`: hoje o `useTrocarPlano` faz update com `plano: 'padrao'`; isso também quebrará no banco.
+- `src/components/admin/AtivarPlanoDialog.tsx`: hoje a renovação também grava `plano: 'padrao'`.
+- Ajustar esses fluxos para:
+  - não trocar o plano ao renovar, ou
+  - usar um valor válido já existente.
+- Como você disse que hoje é plano único, a opção mais segura é renovar sem sobrescrever `plano`.
 
-**Voce precisa fazer o deploy da Edge Function manualmente.** Existem duas formas:
+4. Corrigir fallbacks visuais do painel
+- `src/components/admin/OficinasTable.tsx` usa fallback `padrao` para badge.
+- Trocar por fallback seguro, como `teste` ou `basico`, apenas para exibição.
+- Isso evita inconsistência visual e reduz risco de alguém copiar essa lógica para update/insert.
 
----
+5. Alinhar telas que ainda assumem múltiplos planos
+- `src/components/configuracoes/ConfigPlanoAtual.tsx`
+- `src/components/planos/PlanosComparativo.tsx`
+- `src/pages/PlanosPage.tsx`
+- Se o produto agora é “plano único com teste + renovação”, simplificar essas telas para refletirem a regra atual ou pelo menos impedir updates com valores antigos/inválidos.
 
-#### Opcao A — Via Supabase CLI (recomendado)
+### Ordem de execução recomendada
 
-1. Instale o Supabase CLI se ainda nao tem:
-   ```
-   npm install -g supabase
-   ```
+1. Corrigir a Edge Function para `teste` ou outro valor aceito
+2. Corrigir `usePlanos.ts` e `AtivarPlanoDialog.tsx` para nunca salvar `padrao`
+3. Corrigir fallbacks de UI
+4. Revisar as telas de plano para consistência do produto
+5. Re-deploy da Edge Function e teste completo do fluxo “Nova Oficina”
 
-2. Faca login:
-   ```
-   supabase login
-   ```
+### Resultado esperado
+- Criar oficina deixa de falhar no insert de `configuracoes`
+- Renovar oficina também deixa de correr risco de quebrar pelo mesmo motivo
+- O painel master para de usar o valor inválido `padrao`
+- A regra de negócio fica consistente entre banco, Edge Function e interface
 
-3. Linke o projeto:
-   ```
-   supabase link --project-ref ryphwhchdbkktbdoevga
-   ```
+### Detalhes técnicos
+Arquivos mais críticos:
+- `supabase/functions/admin-create-tenant/index.ts`
+- `src/hooks/usePlanos.ts`
+- `src/components/admin/AtivarPlanoDialog.tsx`
+- `src/components/admin/OficinasTable.tsx`
+- `src/components/configuracoes/ConfigPlanoAtual.tsx`
+- `src/pages/PlanosPage.tsx`
 
-4. Deploy da function:
-   ```
-   supabase functions deploy admin-create-tenant --no-verify-jwt
-   ```
+Causa raiz resumida:
+```text
+Banco aceita apenas alguns valores em configuracoes.plano
+            +
+Código ainda mistura um valor legado/inválido: "padrao"
+            =
+INSERT/UPDATE quebra com check constraint
+```
 
-O `--no-verify-jwt` e necessario porque a validacao do JWT e feita no codigo da function (verificando o MASTER_EMAIL).
-
----
-
-#### Opcao B — Via Dashboard do Supabase
-
-1. Acesse https://supabase.com/dashboard/project/ryphwhchdbkktbdoevga/functions
-2. Clique em "Create a new function"
-3. Nome: `admin-create-tenant`
-4. Cole o conteudo do arquivo `supabase/functions/admin-create-tenant/index.ts`
-5. Desative "Verify JWT" nas configuracoes da function
-6. Salve
-
----
-
-### Nenhuma mudanca de codigo necessaria
-
-O codigo da Edge Function e do dialog `NovaOficinaDialog` estao corretos. O problema e exclusivamente de deploy — a function precisa estar publicada no Supabase para ser chamada.
-
-### Apos o deploy
-
-Tente criar a oficina novamente. Se der outro erro diferente de "Failed to send", ai sim sera um problema de codigo que podemos resolver.
-
+Observação importante:
+mesmo que o arquivo local da Edge Function já tenha sido ajustado, o erro continuará até a versão corrigida estar publicada no Supabase. Então o plano inclui explicitamente validar o código e depois re-publicar a function.
