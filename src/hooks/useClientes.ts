@@ -6,9 +6,9 @@ import type { Cliente } from '@/types/database';
 
 const PER_PAGE = 10;
 
-export function useListarClientes(busca = '', pagina = 1) {
+export function useListarClientes(busca = '', pagina = 1, apenasCompletos = false) {
   return useQuery({
-    queryKey: ['clientes', busca, pagina],
+    queryKey: ['clientes', busca, pagina, apenasCompletos],
     queryFn: async () => {
       const from = (pagina - 1) * PER_PAGE;
       const to = from + PER_PAGE - 1;
@@ -18,6 +18,11 @@ export function useListarClientes(busca = '', pagina = 1) {
         .select('*, motos(id, placa)', { count: 'exact' })
         .order('nome', { ascending: true })
         .range(from, to);
+
+      // Hide "quick" clients (no phone AND no cpf) from the main list
+      if (apenasCompletos) {
+        query = query.or('telefone.neq.,cpf_cnpj.neq.');
+      }
 
       if (busca.trim()) {
         const term = `%${busca.trim()}%`;
