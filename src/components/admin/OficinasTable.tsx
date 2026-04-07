@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { format } from 'date-fns';
-import { Pencil, Lock, Unlock, Plus, Zap } from 'lucide-react';
+import { format, differenceInDays } from 'date-fns';
+import { Pencil, Lock, Unlock, Plus, RefreshCw } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { EditarOficinaDialog } from './EditarOficinaDialog';
 import { NovaOficinaDialog } from './NovaOficinaDialog';
-import { AtivarPlanoDialog } from './AtivarPlanoDialog';
-import { useAdminBloquearOficina } from '@/hooks/useAdminOficinas';
+import { useAdminBloquearOficina, useAdminEditarOficina } from '@/hooks/useAdminOficinas';
 import type { OficinaComStatus } from '@/hooks/useAdminOficinas';
 import { normalizarPlano, type PlanoSlug } from '@/lib/planos';
+import { cn } from '@/lib/utils';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -41,12 +42,28 @@ const planoConfig: Record<PlanoSlug, { label: string; cls: string }> = {
   enterprise: { label: 'Enterprise', cls: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
 };
 
+const PERIODOS = [
+  { label: '1 mês', dias: 30 },
+  { label: '3 meses', dias: 90 },
+  { label: '6 meses', dias: 180 },
+  { label: '12 meses', dias: 365 },
+];
+
+function getVencimentoColor(dataVenc: string | null | undefined) {
+  if (!dataVenc) return 'text-slate-500';
+  const diff = differenceInDays(new Date(dataVenc), new Date());
+  if (diff < 0) return 'text-red-400';
+  if (diff <= 7) return 'text-amber-400';
+  return 'text-emerald-400';
+}
+
 export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Props) {
   const [editando, setEditando] = useState<OficinaComStatus | null>(null);
   const [novaOpen, setNovaOpen] = useState(false);
-  const [ativarPlano, setAtivarPlano] = useState<OficinaComStatus | null>(null);
+  const [renovarOficina, setRenovarOficina] = useState<OficinaComStatus | null>(null);
   const [confirmacao, setConfirmacao] = useState<{ oficina: OficinaComStatus; liberar: boolean } | null>(null);
   const bloquear = useAdminBloquearOficina();
+  const editar = useAdminEditarOficina();
 
   const getAdminInfo = (configId: string) => {
     const a = admins.find((x) => x.config_id === configId);
@@ -60,7 +77,15 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
     });
   };
 
-  const needsRenewal = (o: OficinaComStatus) => o.status === 'aviso' || o.status === 'bloqueado';
+  const handleRenovarRapido = (oficina: OficinaComStatus, dias: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + dias);
+    editar.mutate({
+      id: oficina.id,
+      plano_ativo: true,
+      data_vencimento_plano: new Date(d.toISOString().slice(0, 10) + 'T12:00:00').toISOString(),
+    }, { onSuccess: () => setRenovarOficina(null) });
+  };
 
   return (
     <>
@@ -88,6 +113,7 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
             {oficinas.map((o) => {
               const sc = statusConfig[o.status] || statusConfig.ativo;
               const admin = getAdminInfo(o.id);
+              const vencCor = getVencimentoColor(o.data_vencimento_plano);
               return (
                 <TableRow key={o.id} className="border-slate-700 hover:bg-slate-800/50">
                   <TableCell className="text-white font-medium">{o.nome_fantasia || '—'}</TableCell>
@@ -102,8 +128,18 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
                     )}
                   </TableCell>
                   <TableCell className="text-slate-300 hidden lg:table-cell font-mono text-xs">{o.cnpj || '—'}</TableCell>
-                  <TableCell className="text-slate-300 hidden lg:table-cell">
-                    {o.data_vencimento_plano ? format(new Date(o.data_vencimento_plano), 'dd/MM/yyyy') : '—'}
+                  <TableCell className={cn('hidden lg:table-cell font-medium text-sm', vencCor)}>
+                    {o.data_vencimento_plano ? (
+                      <div>
+                        <span>{format(new Date(o.data_vencimento_plano), 'dd/MM/yyyy')}</span>
+                        {(() => {
+                          const diff = differenceInDays(new Date(o.data_vencimento_plano), new Date());
+                          if (diff < 0) return <span className="text-xs ml-1 opacity-75">(vencido)</span>;
+                          if (diff <= 7) return <span className="text-xs ml-1 opacity-75">({diff}d)</span>;
+                          return null;
+                        })()}
+                      </div>
+                    ) : '—'}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     {(() => {
@@ -117,11 +153,9 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
-                      {needsRenewal(o) && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-400 hover:text-amber-300 hover:bg-slate-700" title="Renovar" onClick={() => setAtivarPlano(o)}>
-                          <Zap className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-slate-700" title="Renovar" onClick={() => setRenovarOficina(o)}>
+                        <RefreshCw className="h-3.5 w-3.5" />
+                      </Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-700" onClick={() => setEditando(o)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
@@ -152,9 +186,30 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
         <EditarOficinaDialog oficina={editando} adminInfo={getAdminInfo(editando.id)} open={!!editando} onOpenChange={(v) => !v && setEditando(null)} />
       )}
       <NovaOficinaDialog open={novaOpen} onOpenChange={setNovaOpen} />
-      {ativarPlano && (
-        <AtivarPlanoDialog oficina={ativarPlano} open={!!ativarPlano} onOpenChange={(v) => !v && setAtivarPlano(null)} />
-      )}
+
+      {/* Mini dialog de renovação rápida */}
+      <Dialog open={!!renovarOficina} onOpenChange={(v) => !v && setRenovarOficina(null)}>
+        <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="text-base">Renovar — {renovarOficina?.nome_fantasia}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-slate-400">Por quanto tempo?</p>
+          <div className="grid grid-cols-2 gap-2">
+            {PERIODOS.map((p) => (
+              <Button
+                key={p.dias}
+                variant="outline"
+                size="sm"
+                onClick={() => renovarOficina && handleRenovarRapido(renovarOficina, p.dias)}
+                disabled={editar.isPending}
+                className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-emerald-600 hover:border-emerald-500 hover:text-white"
+              >
+                {p.label}
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!confirmacao} onOpenChange={(v) => !v && setConfirmacao(null)}>
         <AlertDialogContent className="bg-slate-800 border-slate-700 text-white">
