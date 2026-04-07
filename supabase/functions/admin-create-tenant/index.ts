@@ -6,9 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const VALID_PLAN_VALUES = ["teste", "basico", "profissional", "premium", "enterprise"] as const;
-const DEFAULT_INITIAL_PLAN = "teste";
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -58,8 +55,6 @@ Deno.serve(async (req) => {
       data_vencimento,
     } = body;
 
-    const planoInicial = DEFAULT_INITIAL_PLAN;
-
     if (!email || !password || !nome_responsavel || !nome_fantasia) {
       return new Response(
         JSON.stringify({ error: "Campos obrigatórios: email, password, nome_responsavel, nome_fantasia" }),
@@ -68,6 +63,26 @@ Deno.serve(async (req) => {
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    const { data: planoExistente } = await adminClient
+      .from("configuracoes")
+      .select("plano")
+      .not("plano", "is", null)
+      .limit(1)
+      .maybeSingle();
+
+    const insertPayload: Record<string, unknown> = {
+      nome_fantasia,
+      cnpj: cnpj || null,
+      telefone: telefone_oficina || null,
+      plano_ativo: true,
+      data_vencimento_plano: data_vencimento || new Date(Date.now() + 30 * 86400000).toISOString(),
+      max_funcionarios: 999,
+      dias_tolerancia: 15,
+    };
+
+    if (planoExistente?.plano) {
+      insertPayload.plano = planoExistente.plano;
+    }
 
     // 1) Create auth user
     const { data: newUser, error: createUserError } = await adminClient.auth.admin.createUser({
@@ -88,23 +103,14 @@ Deno.serve(async (req) => {
     // 2) Create configuracoes record — single plan, no limits
     const { data: config, error: configError } = await adminClient
       .from("configuracoes")
-      .insert({
-        nome_fantasia,
-        cnpj: cnpj || null,
-        telefone: telefone_oficina || null,
-        plano: planoInicial,
-        plano_ativo: true,
-        data_vencimento_plano: data_vencimento || new Date(Date.now() + 30 * 86400000).toISOString(),
-        max_funcionarios: 999,
-        dias_tolerancia: 15,
-      })
+      .insert(insertPayload)
       .select("id")
       .single();
 
     if (configError) {
       await adminClient.auth.admin.deleteUser(userId);
       return new Response(
-        JSON.stringify({ error: `Erro ao criar configuração com plano "${planoInicial}": ${configError.message}. Valores esperados no banco: ${VALID_PLAN_VALUES.join(", ")}` }),
+        JSON.stringify({ error: `Erro ao criar configuração: ${configError.message}. Plano enviado: ${String(insertPayload.plano ?? "<default do banco>")}` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
