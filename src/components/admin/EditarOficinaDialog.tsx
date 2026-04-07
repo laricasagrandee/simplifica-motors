@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAdminEditarOficina } from '@/hooks/useAdminOficinas';
+import { useAdminEditarOficina, PLANOS_CONFIG } from '@/hooks/useAdminOficinas';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, KeyRound } from 'lucide-react';
@@ -18,7 +18,7 @@ interface Props {
   onOpenChange: (v: boolean) => void;
 }
 
-const PLANOS = ['basico', 'profissional', 'premium', 'vitalicia', 'enterprise'];
+const PLANOS = Object.keys(PLANOS_CONFIG);
 
 export function EditarOficinaDialog({ oficina, adminInfo, open, onOpenChange }: Props) {
   const [form, setForm] = useState({
@@ -86,7 +86,7 @@ export function EditarOficinaDialog({ oficina, adminInfo, open, onOpenChange }: 
               </SelectTrigger>
               <SelectContent>
                 {PLANOS.map((p) => (
-                  <SelectItem key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</SelectItem>
+                  <SelectItem key={p} value={p}>{PLANOS_CONFIG[p].label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -110,27 +110,18 @@ export function EditarOficinaDialog({ oficina, adminInfo, open, onOpenChange }: 
             </div>
           </div>
 
-          {/* Responsável */}
           {adminInfo && (
             <div className="border-t border-slate-700 pt-4">
               <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Responsável</h3>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-white font-medium">{adminInfo.nome}</p>
-                    <p className="text-xs text-slate-400 font-mono">{adminInfo.email}</p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleResetSenha}
-                    disabled={resetando}
-                    className="border-slate-600 text-slate-300 hover:bg-slate-700"
-                  >
-                    {resetando ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <KeyRound className="h-3.5 w-3.5 mr-1" />}
-                    Resetar Senha
-                  </Button>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-white font-medium">{adminInfo.nome}</p>
+                  <p className="text-xs text-slate-400 font-mono">{adminInfo.email}</p>
                 </div>
+                <Button variant="outline" size="sm" onClick={handleResetSenha} disabled={resetando} className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                  {resetando ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <KeyRound className="h-3.5 w-3.5 mr-1" />}
+                  Resetar Senha
+                </Button>
               </div>
             </div>
           )}

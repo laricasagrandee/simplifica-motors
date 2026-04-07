@@ -1,4 +1,4 @@
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert, FlaskConical } from 'lucide-react';
 import { SUPORTE_WHATSAPP, SUPORTE_NOME } from '@/lib/constants';
 import { useConfiguracoes } from '@/hooks/useConfiguracoes';
 
@@ -13,9 +13,12 @@ function formatarTelefone(num: string) {
 export function BloqueioScreen() {
   const { data: config } = useConfiguracoes();
   const nomeOficina = config?.nome_fantasia || '';
+  const isTeste = config?.plano === 'teste';
 
   const mensagem = encodeURIComponent(
-    `Olá! Preciso renovar meu plano do ${SUPORTE_NOME}.${nomeOficina ? ` Oficina: ${nomeOficina}` : ''}`
+    isTeste
+      ? `Olá! Meu período de teste do ${SUPORTE_NOME} acabou e gostaria de ativar um plano.${nomeOficina ? ` Oficina: ${nomeOficina}` : ''}`
+      : `Olá! Preciso renovar meu plano do ${SUPORTE_NOME}.${nomeOficina ? ` Oficina: ${nomeOficina}` : ''}`
   );
   const whatsappLink = `https://wa.me/${SUPORTE_WHATSAPP}?text=${mensagem}`;
 
@@ -25,12 +28,20 @@ export function BloqueioScreen() {
         <span className="font-display font-extrabold text-3xl text-foreground">Facilita</span>
         <span className="font-display font-extrabold text-3xl text-primary">Motors</span>
       </div>
-      <div className="rounded-full bg-danger-light p-6 mb-6">
-        <ShieldAlert className="h-12 w-12 text-danger" strokeWidth={1.5} />
+      <div className={`rounded-full p-6 mb-6 ${isTeste ? 'bg-blue-500/10' : 'bg-danger-light'}`}>
+        {isTeste ? (
+          <FlaskConical className="h-12 w-12 text-blue-400" strokeWidth={1.5} />
+        ) : (
+          <ShieldAlert className="h-12 w-12 text-danger" strokeWidth={1.5} />
+        )}
       </div>
-      <h1 className="font-display font-bold text-2xl mb-2">Sua assinatura expirou</h1>
+      <h1 className="font-display font-bold text-2xl mb-2">
+        {isTeste ? 'Seu período de teste acabou!' : 'Sua assinatura expirou'}
+      </h1>
       <p className="text-muted-foreground max-w-md mb-6">
-        Entre em contato para renovar seu plano e voltar a ter acesso completo ao sistema.
+        {isTeste
+          ? 'Seu teste grátis de 30 dias terminou. Contate o suporte para ativar seu plano e continuar usando o sistema.'
+          : 'Entre em contato para renovar seu plano e voltar a ter acesso completo ao sistema.'}
       </p>
       <div className="bg-muted rounded-lg p-4 max-w-sm mb-6">
         <p className="text-sm font-medium mb-1">WhatsApp de Suporte</p>

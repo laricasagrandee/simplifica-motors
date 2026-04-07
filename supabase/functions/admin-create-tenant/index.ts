@@ -12,7 +12,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify caller is the master email
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -25,7 +24,6 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Verify the caller using anon client
     const anonClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -45,7 +43,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Parse body
     const body = await req.json();
     const {
       email,
@@ -58,6 +55,7 @@ Deno.serve(async (req) => {
       plano,
       data_vencimento,
       max_funcionarios,
+      dias_tolerancia,
     } = body;
 
     if (!email || !password || !nome_responsavel || !nome_fantasia) {
@@ -67,7 +65,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Admin client with service_role
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     // 1) Create auth user
@@ -93,17 +90,16 @@ Deno.serve(async (req) => {
         nome_fantasia,
         cnpj: cnpj || null,
         telefone: telefone_oficina || null,
-        plano: plano || "basico",
+        plano: plano || "teste",
         plano_ativo: true,
         data_vencimento_plano: data_vencimento || new Date(Date.now() + 30 * 86400000).toISOString(),
-        max_funcionarios: max_funcionarios || 3,
-        dias_tolerancia: 15,
+        max_funcionarios: max_funcionarios || 2,
+        dias_tolerancia: dias_tolerancia ?? 5,
       })
       .select("id")
       .single();
 
     if (configError) {
-      // Rollback: delete user
       await adminClient.auth.admin.deleteUser(userId);
       return new Response(
         JSON.stringify({ error: `Erro ao criar configuração: ${configError.message}` }),
@@ -122,7 +118,6 @@ Deno.serve(async (req) => {
     });
 
     if (funcError) {
-      // Rollback
       await adminClient.from("configuracoes").delete().eq("id", config.id);
       await adminClient.auth.admin.deleteUser(userId);
       return new Response(
