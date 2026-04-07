@@ -97,8 +97,11 @@ export function useAdminExcluirOficina() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('configuracoes').delete().eq('id', id);
+      const { data, error } = await supabase.functions.invoke('admin-delete-tenant', {
+        body: { config_id: id },
+      });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-oficinas'] });
