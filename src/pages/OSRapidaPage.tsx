@@ -11,6 +11,7 @@ import { useListarClientes, useCriarCliente } from '@/hooks/useClientes';
 import { useVeiculosPorCliente, useCriarVeiculo } from '@/hooks/useVeiculos';
 import { useCriarOS } from '@/hooks/useOS';
 import { formatarTelefone, formatarNumeroOS } from '@/lib/formatters';
+import { sanitizeNumeric } from '@/lib/sanitize';
 import { toast } from 'sonner';
 import type { Cliente, Veiculo, TipoVeiculo } from '@/types/database';
 
@@ -21,6 +22,7 @@ export default function OSRapidaPage() {
   const [veiculo, setVeiculo] = useState<Veiculo | null>(null);
   const [problema, setProblema] = useState('');
   const [novoClienteNome, setNovoClienteNome] = useState('');
+  const [novoClienteTelefone, setNovoClienteTelefone] = useState('');
   const [criandoCliente, setCriandoCliente] = useState(false);
   const [novoVeiculoTipo, setNovoVeiculoTipo] = useState<TipoVeiculo>('moto');
   const [criandoVeiculo, setCriandoVeiculo] = useState(false);
@@ -35,9 +37,11 @@ export default function OSRapidaPage() {
   const handleCriarCliente = async () => {
     if (!novoClienteNome.trim()) return;
     try {
-      const c = await criarCliente.mutateAsync({ nome: novoClienteNome.trim(), cpf_cnpj: '', telefone: '' });
+      const telefoneDigits = sanitizeNumeric(novoClienteTelefone);
+      const c = await criarCliente.mutateAsync({ nome: novoClienteNome.trim(), cpf_cnpj: '', telefone: telefoneDigits });
       setCliente(c as Cliente);
       setNovoClienteNome('');
+      setNovoClienteTelefone('');
       setCriandoCliente(false);
       setBusca('');
     } catch { toast.error('Erro ao criar cliente'); }
@@ -82,12 +86,21 @@ export default function OSRapidaPage() {
               <Button variant="ghost" size="sm" onClick={() => { setCliente(null); setVeiculo(null); }}>Trocar</Button>
             </div>
           ) : criandoCliente ? (
-            <div className="flex gap-2">
+            <div className="space-y-2">
               <Input value={novoClienteNome} onChange={(e) => setNovoClienteNome(e.target.value)} placeholder="Nome do cliente" className="min-h-[44px]" />
-              <Button onClick={handleCriarCliente} disabled={criarCliente.isPending || !novoClienteNome.trim()}>
-                {criarCliente.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Criar'}
-              </Button>
-              <Button variant="outline" onClick={() => setCriandoCliente(false)}>×</Button>
+              <Input
+                value={novoClienteTelefone ? formatarTelefone(novoClienteTelefone) : ''}
+                onChange={(e) => setNovoClienteTelefone(sanitizeNumeric(e.target.value).slice(0, 11))}
+                placeholder="(00) 00000-0000"
+                maxLength={15}
+                className="min-h-[44px]"
+              />
+              <div className="flex gap-2">
+                <Button onClick={handleCriarCliente} disabled={criarCliente.isPending || !novoClienteNome.trim()}>
+                  {criarCliente.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Criar'}
+                </Button>
+                <Button variant="outline" onClick={() => { setCriandoCliente(false); setNovoClienteTelefone(''); }}>×</Button>
+              </div>
             </div>
           ) : (
             <>
