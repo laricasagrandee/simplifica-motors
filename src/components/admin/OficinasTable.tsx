@@ -62,8 +62,10 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
   const [novaOpen, setNovaOpen] = useState(false);
   const [renovarOficina, setRenovarOficina] = useState<OficinaComStatus | null>(null);
   const [confirmacao, setConfirmacao] = useState<{ oficina: OficinaComStatus; liberar: boolean } | null>(null);
+  const [excluirOficina, setExcluirOficina] = useState<OficinaComStatus | null>(null);
   const bloquear = useAdminBloquearOficina();
   const editar = useAdminEditarOficina();
+  const excluir = useAdminExcluirOficina();
 
   const getAdminInfo = (configId: string) => {
     const a = admins.find((x) => x.config_id === configId);
