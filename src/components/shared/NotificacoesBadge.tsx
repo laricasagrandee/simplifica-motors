@@ -31,7 +31,7 @@ const colorMap: Record<Alerta['tipo'], string> = {
 };
 
 function getAlertKey(alerta: Alerta) {
-  return `${alerta.tipo}:${alerta.mensagem}`;
+  return alerta.id;
 }
 
 function readDismissedAlerts() {

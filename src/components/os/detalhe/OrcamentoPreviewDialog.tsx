@@ -18,10 +18,13 @@ export function OrcamentoPreviewDialog({ open, onClose, os, itens, nomeOficina }
   const total = pecas.reduce((s, i) => s + i.valor_total, 0) + servicos.reduce((s, i) => s + i.valor_total, 0) - desconto;
   const telefone = os.clientes?.telefone?.replace(/\D/g, '');
   const veiculo = os.motos;
+  const veiculoLabel = veiculo
+    ? [veiculo.marca, veiculo.modelo, veiculo.placa].filter(Boolean).join(' ') || ((veiculo as any).tipo_veiculo === 'carro' ? 'Carro' : 'Moto')
+    : '';
 
   const buildMsg = () => {
     let msg = `*${nomeOficina}*\nOrçamento OS-${os.numero}\n`;
-    if (veiculo) msg += `Veículo: ${[veiculo.marca, veiculo.modelo, veiculo.placa].filter(Boolean).join(' ')}\n\n`;
+    if (veiculo) msg += `Veículo: ${veiculoLabel}\n\n`;
     if (servicos.length > 0) { msg += `*Serviços:*\n`; servicos.forEach(s => { msg += `• ${s.descricao} — ${formatarMoeda(s.valor_total)}\n`; }); msg += `\n`; }
     if (pecas.length > 0) { msg += `*Peças:*\n`; pecas.forEach(p => { msg += `• ${p.descricao} (${p.quantidade}x) — ${formatarMoeda(p.valor_total)}\n`; }); msg += `\n`; }
     if (desconto > 0) msg += `Desconto: -${formatarMoeda(desconto)}\n`;
@@ -49,7 +52,7 @@ export function OrcamentoPreviewDialog({ open, onClose, os, itens, nomeOficina }
         <div className="space-y-4">
           <div className="space-y-1">
             <p className="text-sm"><span className="font-medium">Cliente:</span> {os.clientes?.nome ?? '—'}</p>
-            {veiculo && <p className="text-sm"><span className="font-medium">Veículo:</span> {[veiculo.marca, veiculo.modelo, veiculo.placa].filter(Boolean).join(' ')}</p>}
+            {veiculo && <p className="text-sm"><span className="font-medium">Veículo:</span> {veiculoLabel}</p>}
           </div>
 
           {servicos.length > 0 && (
