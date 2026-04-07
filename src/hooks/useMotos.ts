@@ -1,17 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeInput, sanitizeNumeric, FIELD_LIMITS } from '@/lib/sanitize';
+import { useTenantId } from '@/hooks/useTenantId';
+import { tf, wt } from '@/lib/tenantHelper';
 import type { Moto, OrdemServico } from '@/types/database';
 
 export function useMotosPorCliente(clienteId: string) {
+  const tenantId = useTenantId();
   return useQuery<Moto[]>({
     queryKey: ['motos', clienteId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await tf(supabase
         .from('motos')
         .select('*')
         .eq('cliente_id', clienteId)
-        .order('criado_em', { ascending: false });
+        .order('criado_em', { ascending: false }), tenantId);
       if (error) throw error;
       return (data ?? []) as unknown as Moto[];
     },
@@ -33,10 +36,11 @@ function sanitizeMoto(input: Record<string, string | number | null>, clienteId: 
 
 export function useCriarMoto() {
   const qc = useQueryClient();
+  const tenantId = useTenantId();
   return useMutation({
     mutationFn: async ({ clienteId, ...input }: { clienteId: string } & Record<string, string | number | null>) => {
       const clean = sanitizeMoto(input, clienteId);
-      const { data, error } = await supabase.from('motos').insert(clean).select().single();
+      const { data, error } = await supabase.from('motos').insert(wt(clean, tenantId)).select().single();
       if (error) throw error;
       return data;
     },
@@ -69,14 +73,15 @@ export function useDeletarMoto() {
 }
 
 export function useHistoricoOS(motoId: string) {
+  const tenantId = useTenantId();
   return useQuery<OrdemServico[]>({
     queryKey: ['historico-os-moto', motoId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await tf(supabase
         .from('ordens_servico')
         .select('*, clientes(nome)')
         .eq('moto_id', motoId)
-        .order('criado_em', { ascending: false });
+        .order('criado_em', { ascending: false }), tenantId);
       if (error) throw error;
       return (data ?? []) as unknown as OrdemServico[];
     },

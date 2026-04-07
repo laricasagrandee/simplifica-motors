@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { verificarCaixaAberto, atualizarCaixaEntrada } from '@/lib/caixaHelper';
+import { useTenantId } from '@/hooks/useTenantId';
+import { wt } from '@/lib/tenantHelper';
 import { toast } from 'sonner';
 import { FORMAS_PAGAMENTO } from '@/lib/constants';
 import type { OSPagamento, FormaPagamento } from '@/types/database';
@@ -24,6 +26,7 @@ export function usePagamentosOS(osId: string, valorTotal: number) {
 
 export function useAdicionarPagamento() {
   const qc = useQueryClient();
+  const tenantId = useTenantId();
   return useMutation({
     mutationFn: async (input: {
       osId: string; forma: FormaPagamento; valor: number;
@@ -31,11 +34,11 @@ export function useAdicionarPagamento() {
     }) => {
       const troco = input.forma === 'dinheiro' && input.valorRecebido
         ? Math.max(0, input.valorRecebido - input.valor) : 0;
-      const { error } = await supabase.from('os_pagamentos').insert({
+      const { error } = await supabase.from('os_pagamentos').insert(wt({
         os_id: input.osId, forma_pagamento: input.forma,
         valor: input.valor, parcelas: input.parcelas ?? 1,
         valor_recebido: input.valorRecebido ?? null, troco,
-      });
+      }, tenantId));
       if (error) throw error;
     },
     onSuccess: (_, v) => qc.invalidateQueries({ queryKey: ['os-pagamentos', v.osId] }),
@@ -58,32 +61,31 @@ export function useRemoverPagamento() {
 
 export function useFinalizarPagamento() {
   const qc = useQueryClient();
+  const tenantId = useTenantId();
   return useMutation({
     mutationFn: async ({ osId, osNumero, valorTotal, pagamentos }: {
       osId: string; osNumero: number; valorTotal: number; pagamentos: OSPagamento[];
     }) => {
       const dataHoje = new Date().toISOString().split('T')[0];
 
-      // 0. Buscar taxas de cartão das configurações
-      const { data: configData } = await supabase.from('configuracoes').select('taxa_cartao_debito, taxa_cartao_credito, taxas_parcelamento').limit(1).single();
+      const { data: configData } = tenantId
+        ? await supabase.from('configuracoes').select('taxa_cartao_debito, taxa_cartao_credito, taxas_parcelamento').eq('id', tenantId).single()
+        : await supabase.from('configuracoes').select('taxa_cartao_debito, taxa_cartao_credito, taxas_parcelamento').limit(1).single();
       const taxaDebito = Number(configData?.taxa_cartao_debito ?? 1.99);
       const taxaCreditoAvista = Number(configData?.taxa_cartao_credito ?? 3.49);
       const taxasParc = (configData?.taxas_parcelamento as Record<string, number> | null) ?? {};
 
-      // 1. Caixa
       let caixa = await verificarCaixaAberto();
       if (!caixa) {
         const { data, error } = await supabase.from('caixa')
-          .insert({ data: dataHoje, saldo_abertura: 0, status: 'aberto', total_entradas: 0, total_saidas: 0 })
+          .insert(wt({ data: dataHoje, saldo_abertura: 0, status: 'aberto', total_entradas: 0, total_saidas: 0 }, tenantId))
           .select('id, saldo_abertura, total_entradas, total_saidas').single();
         if (error) throw new Error('Não foi possível abrir o caixa');
         caixa = data;
       }
 
-      // 2. Limpar movimentações anteriores desta OS (proteção contra retry/duplicação)
       await supabase.from('movimentacoes').delete().eq('os_id', osId);
 
-      // 3. Movimentações por pagamento + cálculo de taxas
       let totalTaxas = 0;
       for (const pag of pagamentos) {
         const isPago = pag.forma_pagamento !== 'cartao_credito';
@@ -92,15 +94,14 @@ export function useFinalizarPagamento() {
         const descricao = n > 1
           ? `OS-${osNumero} · ${label} ${n}x`
           : `OS-${osNumero} · ${label}`;
-        const { error } = await supabase.from('movimentacoes').insert({
+        const { error } = await supabase.from('movimentacoes').insert(wt({
           tipo: 'entrada', categoria: 'os_pagamento',
           descricao, valor: pag.valor, forma_pagamento: pag.forma_pagamento,
           os_id: osId, data: dataHoje, pago: isPago,
           total_parcelas: n > 1 ? n : null,
-        });
+        }, tenantId));
         if (error) throw error;
 
-        // Calcular taxa do cartão
         let taxaPct = 0;
         if (pag.forma_pagamento === 'cartao_debito') {
           taxaPct = taxaDebito;
@@ -110,20 +111,18 @@ export function useFinalizarPagamento() {
         if (taxaPct > 0) {
           const valorTaxa = Math.round(pag.valor * taxaPct) / 100;
           totalTaxas += valorTaxa;
-          await supabase.from('movimentacoes').insert({
+          await supabase.from('movimentacoes').insert(wt({
             tipo: 'saida', categoria: 'taxa_cartao',
             descricao: `Taxa ${label} ${taxaPct}% · OS-${osNumero}`,
             valor: valorTaxa, forma_pagamento: pag.forma_pagamento,
             os_id: osId, data: dataHoje, pago: true,
-          });
+          }, tenantId));
         }
       }
 
-      // 4. Atualizar caixa (valor líquido = total - taxas)
       const valorLiquido = valorTotal - totalTaxas;
       await atualizarCaixaEntrada(caixa.id, valorLiquido);
 
-      // 5. Marcar OS como paga
       const formaFlag = pagamentos.length === 1 ? pagamentos[0].forma_pagamento : 'multiplo';
       const { error: osErr } = await supabase.from('ordens_servico').update({
         forma_pagamento: formaFlag, parcelas: 1,

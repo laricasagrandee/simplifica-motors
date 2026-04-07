@@ -1,13 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { sanitizeInput, sanitizeEmail, sanitizeNumeric } from '@/lib/sanitize';
+import { sanitizeInput, sanitizeNumeric, sanitizeMonetary } from '@/lib/sanitize';
+import { useTenantId } from '@/hooks/useTenantId';
+import { tf, wt } from '@/lib/tenantHelper';
+import { sanitizeEmail } from '@/lib/sanitize';
 import { toast } from '@/hooks/use-toast';
 import type { Configuracao } from '@/types/database';
 
 export function useConfiguracoes() {
+  const tenantId = useTenantId();
   return useQuery<Configuracao>({
-    queryKey: ['configuracoes'],
+    queryKey: ['configuracoes', tenantId],
     queryFn: async () => {
+      if (tenantId) {
+        const { data, error } = await supabase.from('configuracoes').select('*').eq('id', tenantId).single();
+        if (error) throw error;
+        return data as unknown as Configuracao;
+      }
       const { data, error } = await supabase.from('configuracoes').select('*').limit(1).single();
       if (error) throw error;
       return data as unknown as Configuracao;

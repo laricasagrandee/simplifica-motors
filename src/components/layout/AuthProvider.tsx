@@ -14,6 +14,7 @@ interface AuthContextType {
   loading: boolean;
   funcionarioLoading: boolean;
   cargo: CargoFuncionario | undefined;
+  tenantId: string | null;
   temPermissao: (acao: Acao) => boolean;
 }
 
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   funcionarioLoading: true,
   cargo: undefined,
+  tenantId: null,
   temPermissao: () => false,
 });
 
@@ -76,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: funcionario, isLoading: funcionarioLoading } = useUsuarioAtual(usuario?.id);
 
   const cargo = funcionario?.cargo as CargoFuncionario | undefined;
+  const tenantId = funcionario?.tenant_id ?? null;
 
   const checkPermissao = useCallback(
     (acao: Acao) => temPermissao(cargo, acao),
@@ -97,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       funcionarioLoading,
       cargo,
+      tenantId,
       temPermissao: checkPermissao,
     }}>
       <BloqueioProvider>

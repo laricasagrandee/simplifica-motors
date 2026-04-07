@@ -1,20 +1,24 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { sanitizeInput, sanitizeEmail, sanitizeNumeric, sanitizeMonetary } from '@/lib/sanitize';
+import { sanitizeInput, sanitizeNumeric, sanitizeMonetary, sanitizeEmail } from '@/lib/sanitize';
+import { useTenantId } from '@/hooks/useTenantId';
+import { tf, wt } from '@/lib/tenantHelper';
 import { toast } from '@/hooks/use-toast';
 import type { Funcionario, CargoFuncionario } from '@/types/database';
 
 export function useFuncionarios(cargo?: CargoFuncionario) {
+  const tenantId = useTenantId();
   return useQuery<Funcionario[]>({
-    queryKey: ['funcionarios', cargo],
+    queryKey: ['funcionarios', cargo, tenantId],
     queryFn: async () => {
-      let query = supabase.from('funcionarios').select('*').order('nome');
+      let query: any = tf(supabase.from('funcionarios').select('*').order('nome'), tenantId);
       if (cargo) query = query.eq('cargo', cargo).eq('ativo', true);
       const { data, error } = await query;
       if (error) throw error;
       return (data ?? []) as unknown as Funcionario[];
     },
     staleTime: 60_000,
+    enabled: !!tenantId,
   });
 }
 
@@ -34,17 +38,14 @@ interface FuncData { nome: string; cargo: CargoFuncionario; telefone: string; em
 
 export function useCriarFuncionario() {
   const qc = useQueryClient();
+  const tenantId = useTenantId();
   return useMutation({
     mutationFn: async (d: FuncData) => {
-      const { error } = await supabase.from('funcionarios').insert({
-        nome: sanitizeInput(d.nome, 200),
-        cargo: d.cargo,
-        telefone: sanitizeNumeric(d.telefone),
-        email: d.email ? sanitizeEmail(d.email) : null,
-        salario: sanitizeMonetary(d.salario),
-        comissao_percentual: d.comissao_percentual || 0,
-        ativo: true,
-      });
+      const { error } = await supabase.from('funcionarios').insert(wt({
+        nome: sanitizeInput(d.nome, 200), cargo: d.cargo, telefone: sanitizeNumeric(d.telefone),
+        email: d.email ? sanitizeEmail(d.email) : null, salario: sanitizeMonetary(d.salario),
+        comissao_percentual: d.comissao_percentual || 0, ativo: true,
+      }, tenantId));
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['funcionarios'] }); toast({ title: 'Funcionário cadastrado!' }); },
@@ -57,11 +58,8 @@ export function useEditarFuncionario() {
   return useMutation({
     mutationFn: async ({ id, ...d }: FuncData & { id: string }) => {
       const { error } = await supabase.from('funcionarios').update({
-        nome: sanitizeInput(d.nome, 200),
-        cargo: d.cargo,
-        telefone: sanitizeNumeric(d.telefone),
-        email: d.email ? sanitizeEmail(d.email) : null,
-        salario: sanitizeMonetary(d.salario),
+        nome: sanitizeInput(d.nome, 200), cargo: d.cargo, telefone: sanitizeNumeric(d.telefone),
+        email: d.email ? sanitizeEmail(d.email) : null, salario: sanitizeMonetary(d.salario),
         comissao_percentual: d.comissao_percentual || 0,
       }).eq('id', id);
       if (error) throw error;

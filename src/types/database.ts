@@ -31,6 +31,7 @@ export type FormaPagamento =
 
 export interface Cliente {
   id: string;
+  tenant_id?: string | null;
   nome: string;
   cpf_cnpj: string;
   telefone: string;
@@ -48,6 +49,7 @@ export interface Cliente {
 
 export interface Veiculo {
   id: string;
+  tenant_id?: string | null;
   cliente_id: string;
   marca: string;
   modelo: string;
@@ -66,6 +68,7 @@ export type TipoVeiculo = 'moto' | 'carro';
 
 export interface Peca {
   id: string;
+  tenant_id?: string | null;
   nome: string;
   codigo: string | null;
   codigo_barras: string | null;
@@ -83,6 +86,7 @@ export interface Peca {
 
 export interface OrdemServico {
   id: string;
+  tenant_id?: string | null;
   numero: number;
   cliente_id: string;
   moto_id: string;
@@ -128,6 +132,7 @@ export interface ChecklistItem {
 
 export interface OSItem {
   id: string;
+  tenant_id?: string | null;
   os_id: string;
   tipo: 'peca' | 'servico';
   peca_id: string | null;
@@ -142,6 +147,7 @@ export interface OSItem {
 
 export interface OSFoto {
   id: string;
+  tenant_id?: string | null;
   os_id: string;
   tipo: string;
   categoria: string | null;
@@ -152,6 +158,7 @@ export interface OSFoto {
 
 export interface Movimentacao {
   id: string;
+  tenant_id?: string | null;
   tipo: string;
   categoria: string;
   descricao: string;
@@ -167,6 +174,7 @@ export interface Movimentacao {
 
 export interface Funcionario {
   id: string;
+  tenant_id?: string | null;
   user_id: string | null;
   nome: string;
   cargo: string;
@@ -181,6 +189,7 @@ export interface Funcionario {
 
 export interface NotaFiscal {
   id: string;
+  tenant_id?: string | null;
   numero: number;
   tipo: string;
   os_id: string | null;
@@ -224,6 +233,7 @@ export interface Configuracao {
 
 export interface VendaPDV {
   id: string;
+  tenant_id?: string | null;
   numero: number;
   cliente_id: string | null;
   valor_total: number;
@@ -254,6 +264,7 @@ export interface VendaPDVItem {
 
 export interface EstoqueMovimentacao {
   id: string;
+  tenant_id?: string | null;
   peca_id: string;
   tipo: string;
   quantidade: number;
@@ -267,6 +278,7 @@ export interface EstoqueMovimentacao {
 
 export interface Caixa {
   id: string;
+  tenant_id?: string | null;
   data: string;
   saldo_abertura: number | null;
   saldo_fechamento: number | null;
@@ -282,6 +294,7 @@ export interface Caixa {
 
 export interface OSPagamento {
   id: string;
+  tenant_id?: string | null;
   os_id: string;
   forma_pagamento: FormaPagamento;
   valor: number;

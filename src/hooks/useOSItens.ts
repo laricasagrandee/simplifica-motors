@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeInput, sanitizeMonetary, sanitizeQuantity } from '@/lib/sanitize';
+import { useTenantId } from '@/hooks/useTenantId';
+import { wt } from '@/lib/tenantHelper';
 import type { OSItem } from '@/types/database';
 
 async function recalcularTotaisOS(osId: string) {
@@ -17,7 +19,6 @@ async function recalcularTotaisOS(osId: string) {
   const desconto = osData?.desconto ?? 0;
   const valorTotal = valorPecas + valorMaoObra - desconto;
 
-  // Calculate custo_pecas from peca costs
   let custoPecas = 0;
   const pecasComId = items.filter(i => i.tipo === 'peca' && i.peca_id);
   if (pecasComId.length > 0) {
@@ -59,9 +60,10 @@ export function useItensPorOS(osId: string) {
 
 export function useAdicionarPeca() {
   const qc = useQueryClient();
+  const tenantId = useTenantId();
   return useMutation({
     mutationFn: async (input: { osId: string; pecaId?: string; descricao: string; quantidade: number; valorUnitario: number }) => {
-      const { error } = await supabase.from('os_itens').insert({
+      const { error } = await supabase.from('os_itens').insert(wt({
         os_id: input.osId,
         tipo: 'peca',
         peca_id: input.pecaId || null,
@@ -69,7 +71,7 @@ export function useAdicionarPeca() {
         quantidade: sanitizeQuantity(input.quantidade),
         valor_unitario: sanitizeMonetary(input.valorUnitario),
         valor_total: sanitizeMonetary(input.quantidade * input.valorUnitario),
-      });
+      }, tenantId));
       if (error) throw error;
       await recalcularTotaisOS(input.osId);
     },
@@ -83,16 +85,17 @@ export function useAdicionarPeca() {
 
 export function useAdicionarServico() {
   const qc = useQueryClient();
+  const tenantId = useTenantId();
   return useMutation({
     mutationFn: async (input: { osId: string; descricao: string; valorUnitario: number }) => {
-      const { error } = await supabase.from('os_itens').insert({
+      const { error } = await supabase.from('os_itens').insert(wt({
         os_id: input.osId,
         tipo: 'servico',
         descricao: sanitizeInput(input.descricao, 200),
         quantidade: 1,
         valor_unitario: sanitizeMonetary(input.valorUnitario),
         valor_total: sanitizeMonetary(input.valorUnitario),
-      });
+      }, tenantId));
       if (error) throw error;
       await recalcularTotaisOS(input.osId);
     },
