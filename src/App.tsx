@@ -25,6 +25,7 @@ import FuncionariosPage from "./pages/FuncionariosPage";
 import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import PlanosPage from "./pages/PlanosPage";
 import AgendamentosPage from "./pages/AgendamentosPage";
+import NFPage from "./pages/NFPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -79,7 +80,7 @@ const App = () => (
                 <Route path="/financeiro" element={<ProtectedRoute permissao="ver_financeiro"><FinanceiroPage /></ProtectedRoute>} />
                 <Route path="/cmv" element={<Navigate to="/relatorios" replace />} />
                 <Route path="/dre" element={<Navigate to="/relatorios" replace />} />
-                <Route path="/nf" element={<Navigate to="/financeiro" replace />} />
+                <Route path="/nf" element={<ProtectedRoute permissao="emitir_nf"><NFPage /></ProtectedRoute>} />
                 <Route path="/relatorios" element={<ProtectedRoute permissao="ver_relatorios"><RelatoriosPage /></ProtectedRoute>} />
                 <Route path="/funcionarios" element={<ProtectedRoute permissao="gerenciar_equipe"><FuncionariosPage /></ProtectedRoute>} />
                 <Route path="/configuracoes" element={<ProtectedRoute permissao="ver_configuracoes"><ConfiguracoesPage /></ProtectedRoute>} />
