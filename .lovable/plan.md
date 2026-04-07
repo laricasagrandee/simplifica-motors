@@ -1,15 +1,13 @@
 
-
-## Plano: Corrigir rota /nf que redireciona pro Financeiro
+## Plano: Remover parcelamento da mensagem WhatsApp
 
 ### Problema
-A rota `/nf` está configurada como `<Navigate to="/financeiro" replace />` (linha 82 do App.tsx). Quando o botão "Gerar Nota Fiscal" navega para `/nf?os_id=...`, o usuário cai na página de Financeiro em vez da página de Notas Fiscais.
+A mensagem enviada pelo WhatsApp inclui as opções de parcelamento (2x, 3x, etc.), mas o usuário quer que isso apareça apenas no preview dentro do app — no WhatsApp, basta mostrar o total à vista.
 
 ### Correção
 
-**`src/App.tsx`**
-- Linha 82: trocar `<Navigate to="/financeiro" replace />` por `<ProtectedRoute permissao="ver_financeiro"><NFPage /></ProtectedRoute>`
-- Adicionar import do `NFPage` no topo do arquivo
+**`src/components/os/detalhe/OrcamentoPreviewDialog.tsx`**
+- Linha 32: remover a linha que adiciona `• Nx de R$ X no cartão` à mensagem do WhatsApp
+- O preview visual dentro do dialog continua mostrando as opções de parcelamento normalmente (linhas 89-96 não mudam)
 
-Uma linha alterada, um import adicionado. A página NFPage já existe e funciona — só não estava sendo usada na rota.
-
+Uma única linha removida.
