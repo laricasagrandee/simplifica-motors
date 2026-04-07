@@ -11,9 +11,12 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ permissao, children }: ProtectedRouteProps) {
-  const { temPermissao, funcionarioLoading } = useAuthContext();
+  const { temPermissao, funcionarioLoading, funcionario } = useAuthContext();
 
   if (funcionarioLoading) return <>{children}</>;
+
+  // Sem funcionario = AppLayout mostra AguardandoAprovacaoPage
+  if (!funcionario) return <>{children}</>;
 
   if (!temPermissao(permissao)) {
     return <AccessDenied />;
