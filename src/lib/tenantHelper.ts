@@ -1,13 +1,12 @@
 /**
  * Tenant helpers for multi-tenant data isolation.
- * Use these in all hooks to filter and tag data by tenant.
+ * Note: tenant_id is not in the auto-generated Supabase types yet,
+ * so we use `as any` casts. After running the migration and regenerating
+ * types, these casts can be removed.
  */
 
 /** Add .eq('tenant_id', tenantId) to any Supabase query builder */
-export function addTenantFilter<T extends { eq: (column: string, value: string) => T }>(
-  query: T,
-  tenantId: string,
-): T {
+export function addTenantFilter(query: any, tenantId: string): any {
   if (!tenantId) return query;
   return query.eq('tenant_id', tenantId);
 }
