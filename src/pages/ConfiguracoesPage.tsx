@@ -8,6 +8,7 @@ import { useAuthContext } from '@/components/layout/AuthProvider';
 import { ConfigDadosOficina } from '@/components/configuracoes/ConfigDadosOficina';
 import { ConfigPlanoAtual } from '@/components/configuracoes/ConfigPlanoAtual';
 import { ConfigImpostos } from '@/components/configuracoes/ConfigImpostos';
+import { ConfigBackup } from '@/components/configuracoes/ConfigBackup';
 import { AuditLogViewer } from '@/components/configuracoes/AuditLogViewer';
 import { normalizarPlano } from '@/lib/planos';
 
@@ -27,6 +28,7 @@ export default function ConfiguracoesPage() {
       <Tabs defaultValue="geral">
         <TabsList>
           <TabsTrigger value="geral">Geral</TabsTrigger>
+          <TabsTrigger value="backup">Backup</TabsTrigger>
           {isAdmin && <TabsTrigger value="auditoria">Log de Auditoria</TabsTrigger>}
         </TabsList>
         <TabsContent value="geral">
@@ -43,6 +45,11 @@ export default function ConfiguracoesPage() {
               taxasParcelamento={c?.taxas_parcelamento ?? null}
               onSalvar={v => c && atualizar.mutate({ id: c.id, ...v } as Parameters<typeof atualizar.mutate>[0])}
             />
+          </div>
+        </TabsContent>
+        <TabsContent value="backup">
+          <div className="mt-4">
+            <ConfigBackup />
           </div>
         </TabsContent>
         {isAdmin && (
