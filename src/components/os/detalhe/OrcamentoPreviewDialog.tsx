@@ -28,9 +28,9 @@ export function OrcamentoPreviewDialog({ open, onClose, os, itens, nomeOficina }
     if (servicos.length > 0) { msg += `*Serviços:*\n`; servicos.forEach(s => { msg += `• ${s.descricao} — ${formatarMoeda(s.valor_total)}\n`; }); msg += `\n`; }
     if (pecas.length > 0) { msg += `*Peças:*\n`; pecas.forEach(p => { msg += `• ${p.descricao} (${p.quantidade}x) — ${formatarMoeda(p.valor_total)}\n`; }); msg += `\n`; }
     if (desconto > 0) msg += `Desconto: -${formatarMoeda(desconto)}\n`;
-    msg += `*TOTAL: ${formatarMoeda(total)}*\n\n💳 *Formas de pagamento:*\n• Pix / Dinheiro: ${formatarMoeda(total)}\n`;
+    msg += `*TOTAL: ${formatarMoeda(total)}*\n\n*Formas de pagamento:*\n• Pix / Dinheiro: ${formatarMoeda(total)}\n`;
     if (total > 0) [2, 3, 4, 5, 6].forEach(n => { const p = total / n; if (p >= 50) msg += `• ${n}x de ${formatarMoeda(p)} no cartão\n`; });
-    msg += `\nGostaria de aprovar o orçamento? Responda *SIM* para confirmar! ✅`;
+    msg += `\nGostaria de aprovar o orçamento?`;
     return msg;
   };
 
