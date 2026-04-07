@@ -1,65 +1,54 @@
 
 
-## Plano: Simplificar para plano unico sem limite de funcionarios + avisos graduais
+## Plano: Corrigir Edge Function + Adicionar Configuracao de Precos no Painel Admin
 
-### O que muda
+### Problema 1 — Edge Function falhando
 
-O modelo de negocio e mais simples do que foi implementado: nao existem planos diferentes. Toda oficina paga o mesmo valor. Nao existe limite de funcionarios. O que muda e so o vencimento e os avisos antes do bloqueio.
+O erro "Failed to send a request to the Edge Function" indica que a function `admin-create-tenant` nao esta sendo encontrada ou os headers CORS estao incompletos. O header `Access-Control-Allow-Headers` atual nao inclui todos os headers que o client Supabase envia (faltam `x-supabase-client-platform`, etc.).
 
-### Logica de avisos e bloqueio (apos vencimento)
+**Correcao em `supabase/functions/admin-create-tenant/index.ts`:**
+- Atualizar CORS headers para incluir todos os headers necessarios do Supabase client
+- Tambem garantir que `supabase/config.toml` tenha a funcao configurada se necessario
 
-- **Dias 1-5 apos vencimento**: Aviso suave - "Sua assinatura venceu. Renove para continuar usando sem interrupcoes."
-- **Dias 6-10 apos vencimento**: Aviso forte - "Seu acesso sera bloqueado em breve. Entre em contato para renovar."
-- **Dia 11-15 apos vencimento**: Aviso urgente - "Ultimo aviso! Seu acesso sera bloqueado em X dias."
-- **Apos 15 dias**: Bloqueio total com tela de contato WhatsApp
+```
+Access-Control-Allow-Headers: authorization, x-client-info, apikey, content-type,
+  x-supabase-client-platform, x-supabase-client-platform-version,
+  x-supabase-client-runtime, x-supabase-client-runtime-version
+```
+
+**Nota importante:** Se a function ainda nao foi deployada no Supabase, voce precisa fazer o deploy manualmente pelo dashboard do Supabase ou CLI. O arquivo existe no codigo mas precisa estar rodando no servidor.
+
+---
+
+### Problema 2 — Configuracao de precos no painel admin
+
+Hoje o sistema nao tem onde configurar o valor cobrado. Voce quer poder definir:
+- Valor mensal (ex: R$ 19,90)
+- Opcao anual com desconto (ex: 10% de desconto)
+- Poder alterar esses valores no futuro
+
+**Nova secao "Configuracoes do Sistema" no painel admin (`AdminPanelPage.tsx`):**
+- Card/secao abaixo dos resumos com:
+  - Campo "Valor mensal" (input monetario, padrao R$ 19,90)
+  - Toggle "Oferecer plano anual"
+  - Campo "Desconto anual (%)" (padrao 10%)
+  - Valor anual calculado automaticamente (ex: R$ 19,90 x 12 = R$ 238,80 - 10% = R$ 214,92)
+  - Botao "Salvar"
+
+**Armazenamento:** Esses valores ficam em `localStorage` do master por enquanto (nao precisa de tabela nova). Quando integrar pagamento Pix futuramente, migra para o banco.
+
+**Novo componente `src/components/admin/AdminConfigPrecos.tsx`:**
+- Campos editaveis com preview do valor final
+- Calculo automatico do anual com desconto
+- Visual escuro consistente com o painel
+
+**Exibicao na tabela de oficinas:**
+- Coluna "Valor" mostrando o valor mensal configurado (ou "Anual" se aplicavel)
+- No card de resumo, adicionar "Receita estimada" = oficinas ativas x valor mensal
 
 ### Arquivos alterados
-
-**1. `src/hooks/useAdminOficinas.ts`**
-- Remover `PLANOS_CONFIG` com multiplos planos
-- Manter apenas: `{ label: 'Facilita Motors', preco: 199, maxFunc: 999 }`
-- Remover `PLANOS_PRECO`
-- Simplificar `calcularStatus`: ativo, aviso, bloqueado (sem teste_ativo/teste_expirado separados)
-
-**2. `src/components/admin/NovaOficinaDialog.tsx`**
-- Remover secao "Tipo de Ativacao" (teste vs pago)
-- Remover dropdown de planos
-- Manter: dados da oficina + dados do responsavel + campo de vencimento (padrao +30 dias)
-- Criar sempre com `plano: 'padrao'`, `plano_ativo: true`, `max_funcionarios: 999`, `dias_tolerancia: 15`
-
-**3. `src/components/admin/AtivarPlanoDialog.tsx`**
-- Remover dropdown de planos
-- Simplificar: so campo de nova data de vencimento + botao "Renovar"
-
-**4. `src/components/admin/EditarOficinaDialog.tsx`**
-- Remover dropdown de plano
-- Remover campo max_funcionarios
-- Manter: nome, cnpj, telefone, vencimento, ativo toggle
-
-**5. `src/components/admin/OficinasTable.tsx`**
-- Remover coluna "Plano" (nao tem mais variacao)
-- Ajustar badges de status
-
-**6. `src/hooks/usePlanos.ts` — `useVerificarBloqueio`**
-- Reescrever logica de tolerancia com 3 niveis:
-  - 1-5 dias: `{ emTolerancia: true, nivel: 'suave', mensagem: "..." }`
-  - 6-10 dias: `{ emTolerancia: true, nivel: 'forte', mensagem: "..." }`
-  - 11-15 dias: `{ emTolerancia: true, nivel: 'urgente', mensagem: "..." }`
-  - 15+: `{ bloqueado: true }`
-
-**7. `src/components/layout/BloqueioAviso.tsx`**
-- Estilizar por nivel: suave (amarelo), forte (laranja), urgente (vermelho pulsante)
-- Mensagens nao agressivas mas claras
-
-**8. `src/components/layout/BloqueioScreen.tsx`**
-- Remover logica de teste vs pago (tudo igual agora)
-- Mensagem unica: "Seu acesso foi suspenso por pendencia financeira. Entre em contato para regularizar."
-
-**9. `src/components/admin/AdminResumoCards.tsx`**
-- Remover card de "Receita estimada" (nao faz sentido com plano unico sem valores vistos)
-- Ou simplificar para mostrar: Total oficinas, Ativas, Em aviso, Bloqueadas
-
-**10. `supabase/functions/admin-create-tenant/index.ts`**
-- Remover parametros de plano variavel
-- Sempre criar com `plano: 'padrao'`, `max_funcionarios: 999`, `dias_tolerancia: 15`
+- `supabase/functions/admin-create-tenant/index.ts` — fix CORS
+- `src/components/admin/AdminConfigPrecos.tsx` — novo componente de precos
+- `src/pages/AdminPanelPage.tsx` — incluir secao de precos
+- `src/components/admin/AdminResumoCards.tsx` — adicionar receita estimada
 
