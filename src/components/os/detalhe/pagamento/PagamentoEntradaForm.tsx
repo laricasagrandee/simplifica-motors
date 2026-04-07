@@ -7,6 +7,7 @@ import { PagamentoDinheiro } from './PagamentoDinheiro';
 import { PagamentoParcelado } from './PagamentoParcelado';
 import { formatarMoeda } from '@/lib/formatters';
 import { toast } from 'sonner';
+import { useConfiguracoes } from '@/hooks/useConfiguracoes';
 import type { FormaPagamento } from '@/types/database';
 
 interface Props {
@@ -21,12 +22,28 @@ export function PagamentoEntradaForm({ valorRestante, onAdicionar, loading }: Pr
   const [recebido, setRecebido] = useState('');
   const [parcelas, setParcelas] = useState(1);
   const formaRef = useRef<HTMLDivElement>(null);
+  const { data: config } = useConfiguracoes();
 
   const valorNum = valor ? parseFloat(valor) : valorRestante;
-  const valorFinal = Math.min(Math.max(valorNum, 0), valorRestante);
+  const valorBase = Math.min(Math.max(valorNum, 0), valorRestante);
+
+  // Calcular taxa de cartão de crédito
+  const taxaCreditoAvista = Number(config?.taxa_cartao_credito ?? 3.49);
+  const taxasParc = ((config as unknown as Record<string, unknown>)?.taxas_parcelamento as Record<string, number> | null) ?? {};
+
+  let taxaPct = 0;
+  if (forma === 'cartao_credito') {
+    taxaPct = parcelas > 1 ? (taxasParc[String(parcelas)] ?? 4.99) : taxaCreditoAvista;
+  }
+
+  const totalComTaxa = forma === 'cartao_credito' && taxaPct > 0
+    ? Math.round(valorBase * (1 + taxaPct / 100) * 100) / 100
+    : valorBase;
+
+  const valorFinal = totalComTaxa;
   const recebidoNum = parseFloat(recebido) || 0;
-  const troco = forma === 'dinheiro' ? Math.max(0, recebidoNum - valorFinal) : 0;
-  const valorInvalido = valorFinal <= 0 || valorFinal > valorRestante + 0.01;
+  const troco = forma === 'dinheiro' ? Math.max(0, recebidoNum - valorBase) : 0;
+  const valorInvalido = valorBase <= 0 || valorBase > valorRestante + 0.01;
 
   const reset = () => {
     setForma(null); setValor(''); setRecebido(''); setParcelas(1);
@@ -35,7 +52,7 @@ export function PagamentoEntradaForm({ valorRestante, onAdicionar, loading }: Pr
 
   const handleAdicionar = () => {
     if (!forma || valorInvalido) return;
-    if (forma === 'dinheiro' && recebidoNum > 0 && recebidoNum < valorFinal) {
+    if (forma === 'dinheiro' && recebidoNum > 0 && recebidoNum < valorBase) {
       toast.error('Valor recebido menor que o valor');
       return;
     }
@@ -43,7 +60,7 @@ export function PagamentoEntradaForm({ valorRestante, onAdicionar, loading }: Pr
       forma_pagamento: forma,
       valor: Math.round(valorFinal * 100) / 100,
       parcelas: forma === 'cartao_credito' ? parcelas : 1,
-      valor_recebido: forma === 'dinheiro' ? (recebidoNum || valorFinal) : null,
+      valor_recebido: forma === 'dinheiro' ? (recebidoNum || valorBase) : null,
       troco: forma === 'dinheiro' ? troco : null,
     });
     reset();
@@ -75,10 +92,16 @@ export function PagamentoEntradaForm({ valorRestante, onAdicionar, loading }: Pr
           </div>
 
           {forma === 'dinheiro' && (
-            <PagamentoDinheiro total={valorFinal} valorRecebido={recebido} onValorChange={setRecebido} />
+            <PagamentoDinheiro total={valorBase} valorRecebido={recebido} onValorChange={setRecebido} />
           )}
           {forma === 'cartao_credito' && (
-            <PagamentoParcelado total={valorFinal} parcelas={parcelas} onParcelasChange={setParcelas} />
+            <PagamentoParcelado
+              total={valorBase}
+              parcelas={parcelas}
+              onParcelasChange={setParcelas}
+              taxaPct={taxaPct}
+              totalComTaxa={totalComTaxa}
+            />
           )}
 
           <Button
