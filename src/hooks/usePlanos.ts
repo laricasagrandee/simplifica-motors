@@ -94,7 +94,7 @@ export function useTrocarPlano() {
     mutationFn: async ({ configId }: { configId: string }) => {
       const venc = new Date(); venc.setMonth(venc.getMonth() + 1);
       const { error } = await supabase.from('configuracoes').update({
-        plano: 'padrao', max_funcionarios: 999, plano_ativo: true,
+        plano: 'basico', max_funcionarios: 999, plano_ativo: true,
         data_vencimento_plano: venc.toISOString(),
       }).eq('id', configId);
       if (error) throw error;
