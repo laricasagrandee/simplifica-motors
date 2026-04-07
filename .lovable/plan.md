@@ -1,43 +1,40 @@
 
 
-## Plano: Corrigir fluxo de login com conta excluida
+## Plano: Login de conta excluida deve mostrar erro, nao redirecionar
 
 ### Problema
 
-Dois bugs:
+Quando voce exclui uma oficina pelo painel Master, a edge function `admin-delete-tenant` deleta os dados (funcionarios, clientes, etc.) e tenta deletar o auth user. Porem, se a exclusao do auth user falha silenciosamente, o usuario continua existindo no Supabase Auth. Ao fazer login, as credenciais sao validas (auth user existe), o sistema redireciona para `/dashboard`, e como nao ha `funcionario`, mostra "Acesso nao disponivel".
 
-1. **ProtectedRoute bloqueia antes de AppLayout**: Quando o usuario loga mas nao tem `funcionario`, `cargo` e `undefined`, `temPermissao()` retorna `false`, e ProtectedRoute mostra "Acesso Restrito". Mas deveria deixar passar para o AppLayout mostrar "Acesso nao disponivel" (com botao WhatsApp + Voltar ao Login).
-
-2. **Auth users podem nao estar sendo deletados**: A edge function `admin-delete-tenant` deleta auth users no final, mas se algum erro silencioso ocorre, o usuario continua conseguindo logar.
+O comportamento correto: apos o login, se nao existe `funcionario`, fazer logout automatico e mostrar erro na tela de login.
 
 ### Mudancas
 
-**1. `src/components/shared/ProtectedRoute.tsx`**
+**1. `src/components/layout/AuthProvider.tsx`**
 
-Adicionar check: se `funcionario` e `null` (nao apenas loading), nao bloquear — deixar children renderizar. O AppLayout vai capturar esse caso e mostrar a tela correta.
+No `onAuthStateChange`, quando `SIGNED_IN` acontece (exceto master), nao redirecionar imediatamente. Em vez disso, consultar `funcionarios` pelo `user_id`. Se nao encontrar nenhum registro, fazer `signOut()` e redirecionar para `/login` com um parametro de erro (`?erro=sem-acesso`).
 
-```typescript
-const { temPermissao, funcionarioLoading, funcionario } = useAuthContext();
+Logica:
+- Apos `SIGNED_IN`, chamar `supabase.from('funcionarios').select('id').eq('user_id', session.user.id).maybeSingle()`
+- Se retornar `null` (sem funcionario), chamar `supabase.auth.signOut()` e `navigate('/login?erro=sem-acesso')`
+- Se retornar dados, redirecionar normalmente para dashboard
 
-if (funcionarioLoading) return <>{children}</>;
+**2. `src/pages/LoginPage.tsx`**
 
-// Se nao tem funcionario, deixa AppLayout lidar (mostra AguardandoAprovacao)
-if (!funcionario) return <>{children}</>;
+Ler o parametro `?erro=sem-acesso` da URL. Se presente, mostrar uma mensagem de erro no formulario: "Esta conta nao esta vinculada a nenhuma oficina ativa. Entre em contato com o suporte."
 
-if (!temPermissao(permissao)) {
-  return <AccessDenied />;
-}
-```
+**3. `supabase/functions/admin-delete-tenant/index.ts`**
 
-**2. `src/components/layout/AuthProvider.tsx`** — expor `funcionario` no contexto (ja expoe, ok)
+Adicionar tratamento de erro no loop de exclusao de auth users. Se `deleteUser` falhar, logar o erro mas nao interromper o fluxo. Tambem adicionar tabelas que possam estar faltando na lista de exclusao (ex: `vendas_pdv`, `itens_venda_pdv`, `caixa_diario`).
 
 ### Resultado
 
-- Login com conta excluida (se auth user ainda existe) → tela "Acesso nao disponivel" com botao WhatsApp
+- Login com conta excluida → erro "Esta conta nao esta vinculada a nenhuma oficina" na propria tela de login
 - Login com credenciais invalidas → erro "E-mail ou senha invalidos" (ja funciona)
-- Login normal com funcionario → dashboard (ja funciona)
-- Funcionario sem permissao para rota → "Acesso Restrito" (ja funciona)
+- Login normal → dashboard (ja funciona)
 
-### Arquivo alterado
-- `src/components/shared/ProtectedRoute.tsx`
+### Arquivos alterados
+- `src/components/layout/AuthProvider.tsx`
+- `src/pages/LoginPage.tsx`
+- `supabase/functions/admin-delete-tenant/index.ts`
 
