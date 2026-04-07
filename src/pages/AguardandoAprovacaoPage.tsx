@@ -14,12 +14,12 @@ export default function AguardandoAprovacaoPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6 text-center">
-      <div className="rounded-full bg-warning-light p-4 mb-4">
-        <Clock className="h-8 w-8 text-warning" strokeWidth={1.75} />
+      <div className="rounded-full bg-destructive/10 p-4 mb-4">
+        <Clock className="h-8 w-8 text-destructive" strokeWidth={1.75} />
       </div>
-      <h1 className="font-display font-bold text-xl text-foreground mb-2">Aguardando liberação</h1>
+      <h1 className="font-display font-bold text-xl text-foreground mb-2">Acesso não disponível</h1>
       <p className="text-sm text-muted-foreground max-w-sm mb-1">
-        Sua conta (<span className="font-mono text-xs">{email}</span>) ainda não foi vinculada a uma oficina. Entre em contato com o suporte para ativar seu acesso.
+        Sua conta (<span className="font-mono text-xs">{email}</span>) não está vinculada a nenhuma oficina ativa. Se você acredita que isso é um erro, entre em contato com o suporte.
       </p>
       <p className="text-xs text-muted-foreground mb-6">
         {SUPORTE_NOME} — Suporte
@@ -31,7 +31,7 @@ export default function AguardandoAprovacaoPage() {
             Falar com Suporte
           </a>
         </Button>
-        <Button variant="outline" onClick={() => logout()}>Sair</Button>
+        <Button variant="outline" onClick={() => logout()}>Voltar ao Login</Button>
       </div>
     </div>
   );
