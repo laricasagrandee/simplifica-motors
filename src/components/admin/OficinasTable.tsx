@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { EditarOficinaDialog } from './EditarOficinaDialog';
 import { NovaOficinaDialog } from './NovaOficinaDialog';
-import { useAdminBloquearOficina, useAdminEditarOficina } from '@/hooks/useAdminOficinas';
+import { useAdminBloquearOficina, useAdminEditarOficina, useAdminExcluirOficina } from '@/hooks/useAdminOficinas';
 import type { OficinaComStatus } from '@/hooks/useAdminOficinas';
 import { normalizarPlano, type PlanoSlug } from '@/lib/planos';
 import { cn } from '@/lib/utils';
