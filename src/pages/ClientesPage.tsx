@@ -21,7 +21,7 @@ export default function ClientesPage() {
   const [excluindo, setExcluindo] = useState<Cliente | null>(null);
   const navigate = useNavigate();
 
-  const { data, isLoading } = useListarClientes(busca, pagina);
+  const { data, isLoading } = useListarClientes(busca, pagina, true);
   const deletar = useDeletarCliente();
 
   const handleExcluir = async () => {
