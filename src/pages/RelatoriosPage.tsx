@@ -100,7 +100,7 @@ export default function RelatoriosPage() {
       <PageHeader titulo="Relatórios e Análises" subtitulo="Métricas e rankings da oficina" />
       <div className="space-y-4">
         <Tabs defaultValue="faturamento">
-          <TabsList className="w-full sm:w-auto overflow-x-auto">
+          <TabsList className="w-full sm:w-auto overflow-x-auto scrollbar-hide">
             <TabsTrigger value="faturamento">Faturamento</TabsTrigger>
             <TabsTrigger value="avancado">Avançado</TabsTrigger>
             <TabsTrigger value="produtividade">Produtividade</TabsTrigger>

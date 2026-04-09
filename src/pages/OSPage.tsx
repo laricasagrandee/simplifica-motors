@@ -23,11 +23,11 @@ export default function OSPage() {
   return (
     <AppLayout>
       <PageHeader titulo="Ordens de Serviço" subtitulo="Gerencie todas as OS da oficina">
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate('/os/rapida')} className="gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={() => navigate('/os/rapida')} className="gap-2 min-h-[44px]">
             ⚡ OS Rápida
           </Button>
-          <Button onClick={() => navigate('/os/nova')} className="gap-2">
+          <Button onClick={() => navigate('/os/nova')} className="gap-2 min-h-[44px]">
             <Plus className="h-4 w-4" /> Nova OS
           </Button>
         </div>

@@ -182,7 +182,7 @@ export default function FinanceiroPage() {
       )}
 
       <Tabs defaultValue={defaultTab} className="space-y-4">
-        <TabsList className="w-full sm:w-auto overflow-x-auto">
+        <TabsList className="w-full sm:w-auto overflow-x-auto scrollbar-hide">
           <TabsTrigger value="movimentacoes">Movimentações</TabsTrigger>
           <TabsTrigger value="caixa">Caixa</TabsTrigger>
           <TabsTrigger value="receber">A Receber</TabsTrigger>

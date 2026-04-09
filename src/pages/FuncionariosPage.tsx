@@ -35,9 +35,9 @@ export default function FuncionariosPage() {
   return (
     <AppLayout>
       <PageHeader titulo="Equipe" subtitulo="Gestão de funcionários e produtividade">
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setMetasOpen(true)} className="min-h-[44px]"><Target className="h-4 w-4 mr-1" />Metas</Button>
-          <Button onClick={() => { setEditando(undefined); setFormOpen(true); }} className="bg-accent text-accent-foreground min-h-[44px]"><Plus className="h-4 w-4 mr-1" />Novo Funcionário</Button>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={() => setMetasOpen(true)} className="min-h-[44px] gap-2"><Target className="h-4 w-4" />Metas</Button>
+          <Button onClick={() => { setEditando(undefined); setFormOpen(true); }} className="bg-accent text-accent-foreground min-h-[44px] gap-2"><Plus className="h-4 w-4" />Novo Funcionário</Button>
         </div>
       </PageHeader>
       <Tabs defaultValue="equipe">

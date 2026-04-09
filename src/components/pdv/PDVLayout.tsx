@@ -18,7 +18,7 @@ export function PDVLayout({ produtosPanel, carrinhoPanel, historicoPanel, carrin
   const isMobile = useIsMobile();
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--surface-secondary))]">
+    <div className="min-h-[100dvh] bg-[hsl(var(--surface-secondary))]">
       <div className="flex items-center gap-3 p-4 bg-card border-b border-border">
         <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
           <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
