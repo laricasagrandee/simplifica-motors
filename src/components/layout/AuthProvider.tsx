@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { getDeviceMode } from '@/modules/device';
 import { useUsuarioAtual } from '@/hooks/useAuth';
 import { temPermissao, type Acao } from '@/lib/permissions';
 import { MASTER_EMAIL } from '@/lib/constants';
@@ -69,8 +70,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         const current = window.location.pathname;
+        const savedMode = getDeviceMode();
+        
+        // Primeira vez: escolher modo de uso
+        if (!savedMode) {
+          if (current !== '/escolha-modo') {
+            navigate('/escolha-modo', { replace: true });
+          }
+          return;
+        }
+
         const lastRoute = localStorage.getItem('fm:last-route');
-        const target = lastRoute && !['/', '/login', '/recuperar-senha', '/admin'].includes(lastRoute)
+        const target = lastRoute && !['/', '/login', '/recuperar-senha', '/admin', '/escolha-modo'].includes(lastRoute)
           ? lastRoute
           : '/dashboard';
 

@@ -62,6 +62,8 @@ export const TIPOS_VEICULO = [
   { value: 'carro' as const, label: 'Carro', icon: 'Car' },
 ] as const;
 
+export const DOWNLOAD_DESKTOP_URL = 'https://drive.google.com/drive/folders/PLACEHOLDER';
+
 export const CATEGORIAS_DESPESA = [
   'Aluguel', 'Energia', 'Água', 'Internet', 'Salários',
   'Compra de Peças', 'Manutenção', 'Marketing', 'Impostos', 'Outros',

@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import LoginPage from "./pages/LoginPage";
 import VeiculosPage from "./pages/VeiculosPage";
 import RecuperarSenhaPage from "./pages/RecuperarSenhaPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import ClientesPage from "./pages/ClientesPage";
 import ClienteDetalhePage from "./pages/ClienteDetalhePage";
@@ -28,6 +29,7 @@ import PlanosPage from "./pages/PlanosPage";
 import AgendamentosPage from "./pages/AgendamentosPage";
 import NFPage from "./pages/NFPage";
 import AdminPanelPage from "./pages/AdminPanelPage";
+import EscolhaModoPage from "./pages/EscolhaModoPage";
 import NotFound from "./pages/NotFound";
 import { MASTER_EMAIL } from "@/lib/constants";
 
@@ -38,7 +40,7 @@ function RoutePersistence() {
   const location = useLocation();
 
   useEffect(() => {
-    if (!["/login", "/recuperar-senha", "/"].includes(location.pathname)) {
+    if (!["/login", "/recuperar-senha", "/reset-password", "/escolha-modo", "/"].includes(location.pathname)) {
       localStorage.setItem(LAST_ROUTE_KEY, `${location.pathname}${location.search}${location.hash}`);
     }
   }, [location.pathname, location.search, location.hash]);
@@ -124,6 +126,9 @@ const App = () => (
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/recuperar-senha" element={<RecuperarSenhaPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/escolha-modo" element={<EscolhaModoPage />} />
+          <Route path="/admin" element={<AdminRoute />} />
           <Route path="/admin" element={<AdminRoute />} />
           <Route path="/*" element={
             <AuthProvider>

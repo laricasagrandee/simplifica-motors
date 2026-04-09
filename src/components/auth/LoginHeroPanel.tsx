@@ -6,7 +6,10 @@ export function LoginHeroPanel() {
           <span className="font-display font-extrabold text-4xl text-foreground">Facilita</span>
           <span className="font-display font-extrabold text-4xl text-primary">Motors</span>
         </div>
-        <p className="text-lg text-muted-foreground">Sua oficina, simplificada.</p>
+        <p className="text-lg text-muted-foreground mb-4">Sua oficina, simplificada.</p>
+        <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-sm font-semibold px-4 py-1.5 rounded-full">
+          ✨ 30 dias grátis para testar
+        </span>
       </div>
 
       {/* Testimonial */}

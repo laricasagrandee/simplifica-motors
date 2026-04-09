@@ -19,7 +19,7 @@ export default function LoginPage() {
   if (session) return <Navigate to="/dashboard" replace />;
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-[100dvh] flex bg-background">
       <div
         className="hidden lg:flex lg:w-[55%] flex-col items-center justify-center relative p-12"
         style={{ background: 'linear-gradient(135deg, hsl(220, 16%, 96%), hsl(160, 40%, 94%))' }}
@@ -58,9 +58,14 @@ function LoginFormCard() {
 
   return (
     <div className="w-full max-w-sm">
-      <div className="flex items-baseline justify-center gap-0.5 mb-8 lg:hidden">
-        <span className="font-display font-extrabold text-2xl text-foreground">Facilita</span>
-        <span className="font-display font-extrabold text-2xl text-primary">Motors</span>
+      <div className="flex flex-col items-center mb-8 lg:hidden">
+        <div className="flex items-baseline gap-0.5">
+          <span className="font-display font-extrabold text-2xl text-foreground">Facilita</span>
+          <span className="font-display font-extrabold text-2xl text-primary">Motors</span>
+        </div>
+        <span className="mt-2 inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-full">
+          ✨ 30 dias grátis para testar
+        </span>
       </div>
       <div className="bg-card rounded-2xl shadow-lg p-8 lg:p-10 border border-border">
         <h2 className="font-display text-xl font-bold text-foreground">Bem-vindo de volta</h2>

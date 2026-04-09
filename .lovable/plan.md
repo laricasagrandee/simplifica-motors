@@ -1,191 +1,120 @@
 
-# Plano de Migração — Facilita Motors Local-First
+## Plano: Evolução de UX — Login, Licença, Mobile e Onboarding
 
-## Visão Geral
+### Escopo
 
-Converter o app web atual (React + Supabase) em um app desktop Electron com banco local SQLite, mantendo o PWA como cliente mobile. Supabase permanece apenas para autenticação, licença e registro de máquina.
-
----
-
-## Estrutura Final de Pastas
-
-```
-src/
-├── modules/
-│   ├── license/
-│   │   ├── components/       # LoginForm, BloqueioScreen, AvisoPre-vencimento
-│   │   ├── hooks/            # useLicense, useLogin, useLogout
-│   │   ├── services/         # licenseService (validação, tolerância offline)
-│   │   ├── api/              # licenseApi (chamadas Supabase para licença)
-│   │   ├── types.ts
-│   │   └── index.ts
-│   │
-│   ├── device/
-│   │   ├── hooks/            # useDeviceType, useDeviceMode
-│   │   ├── services/         # deviceService (detectar PC/mobile, capturar hostname)
-│   │   ├── api/              # deviceApi (registrar/buscar máquina no Supabase)
-│   │   ├── types.ts
-│   │   └── index.ts
-│   │
-│   ├── local-server/
-│   │   ├── server/           # Express server (roda no processo Electron)
-│   │   ├── routes/           # endpoints REST locais (clientes, OS, peças, etc.)
-│   │   ├── middleware/       # auth local, cors local
-│   │   ├── services/         # serverLifecycle (start/stop/status)
-│   │   ├── types.ts
-│   │   └── index.ts
-│   │
-│   ├── local-connection/
-│   │   ├── components/       # StatusConexao, ConexaoManual (fallback)
-│   │   ├── hooks/            # useLocalConnection, useConnectionStatus
-│   │   ├── services/         # discoveryService (hostname → IP → Supabase fallback)
-│   │   ├── api/              # connectionApi (ping, retry, healthcheck)
-│   │   ├── types.ts
-│   │   └── index.ts
-│   │
-│   └── storage/
-│       ├── adapters/
-│       │   ├── sqliteAdapter.ts    # Banco local via better-sqlite3 (Electron)
-│       │   ├── indexeddbAdapter.ts  # Banco local via IndexedDB (PWA mobile-only)
-│       │   └── remoteAdapter.ts    # Acessa dados via local-server (PWA modo híbrido)
-│       ├── repositories/     # clienteRepo, osRepo, pecaRepo, etc.
-│       ├── migrations/       # migrações do schema SQLite
-│       ├── services/         # storageService (abstração unificada)
-│       ├── types.ts
-│       └── index.ts
-│
-├── components/              # Componentes UI compartilhados (manter os atuais)
-│   ├── layout/
-│   ├── ui/
-│   └── shared/
-│
-├── pages/                   # Páginas (mantém estrutura atual)
-├── lib/                     # Utilitários puros (formatters, validators, etc.)
-├── hooks/                   # Hooks globais (use-mobile, use-toast)
-└── types/                   # Tipos globais
-
-electron/
-├── main.cjs                 # Processo principal Electron
-├── preload.cjs              # Bridge segura (contextBridge)
-└── server.cjs               # Servidor Express local (rodando no main process)
-```
+Melhorar a experiência do usuário em 8 áreas, sem alterar a arquitetura local-first (Electron/Tauri, SQLite, servidor local). Supabase continua apenas para auth, licença e registro.
 
 ---
 
-## O que acontece com cada arquivo atual
+### 1. Login Mobile — Corrigir teclado e layout
 
-### MANTÉM (sem alteração)
-- `src/components/ui/*` — componentes shadcn
-- `src/components/layout/AppSidebar.tsx, TopBar.tsx, MobileNav.tsx, AppLayout.tsx`
-- `src/pages/*` — todas as páginas
-- `src/lib/formatters.ts, validators.ts, utils.ts, calculators.ts, sanitize.ts`
-- `src/index.css, tailwind.config.ts, vite.config.ts`
-- `public/*` (manifest, icons, sw.js)
+**Problema**: Teclado cobre campo de senha, inputs difíceis de clicar no mobile.
 
-### MOVE para módulos
-| Arquivo atual | Destino |
-|---|---|
-| `src/hooks/useAuth.ts` | `src/modules/license/hooks/useLogin.ts` + `useLogout.ts` |
-| `src/components/layout/AuthProvider.tsx` | `src/modules/license/components/LicenseProvider.tsx` |
-| `src/components/layout/BloqueioProvider.tsx` | `src/modules/license/components/BloqueioProvider.tsx` |
-| `src/components/layout/BloqueioScreen.tsx` | `src/modules/license/components/BloqueioScreen.tsx` |
-| `src/components/layout/BloqueioAviso.tsx` | `src/modules/license/components/BloqueioAviso.tsx` |
-| `src/lib/permissions.ts` | `src/modules/license/services/permissionService.ts` |
-| `src/lib/planos.ts` | `src/modules/license/services/planoService.ts` |
-| `src/hooks/usePlanos.ts` | `src/modules/license/hooks/usePlanos.ts` |
-| `src/hooks/useTenantId.ts` | `src/modules/device/hooks/useTenantId.ts` |
-| `src/lib/tenantHelper.ts` | `src/modules/storage/services/tenantHelper.ts` |
-| `src/integrations/supabase/client.ts` | `src/modules/license/api/supabaseClient.ts` (usado APENAS para auth/licença) |
+**Solução** (`src/pages/LoginPage.tsx` + `src/components/auth/LoginForm.tsx`):
+- Adicionar `min-h-[100dvh]` em vez de `min-h-screen` (respeita viewport dinâmico do mobile)
+- Inputs com `h-12` (48px — touch target mínimo)
+- Formulário com `pb-safe` e scroll automático via CSS `scroll-margin`
+- Botão de login sempre visível com `sticky bottom-0`
+- Meta viewport já existe, garantir `interactive-widget=resizes-content`
 
-### REFATORA (lógica migra de Supabase → storage local)
-Todos os 51 hooks de dados (`useClientes, useOS, usePecas, useFuncionarios, useFinanceiro, usePDV, etc.`) serão refatorados para usar `storageService` em vez de `supabase.from(...)` direto.
+### 2. Login Desktop — Painel hero + teste grátis
 
-Isso será feito gradualmente — cada hook passa a chamar o repository correspondente do módulo storage.
+**Arquivo**: `src/pages/LoginPage.tsx`, `src/components/auth/LoginHeroPanel.tsx`
 
----
+- Manter layout split (hero esquerda, form direita) no desktop
+- No mobile: esconder hero, mostrar só o form
+- Adicionar badge "30 dias grátis" abaixo do logo no mobile
+- Adicionar link "Criar conta" no form (aponta para registro futuro ou WhatsApp)
+- Texto "Teste grátis por 30 dias" visível em ambos
 
-## Plano de Migração por Etapas
+### 3. Botão "Baixar versão para computador" no mobile
 
-### ETAPA 1 — Estrutura base + módulo device (sem quebrar nada)
-- Criar pastas `src/modules/*`
-- Criar `modules/device` com detecção PC/mobile e hook `useDeviceMode`
-- Criar tabela `machine_registry` no Supabase (email, tenant_id, machine_name, porta, ip, modo)
-- **Nada quebra** — o app continua funcionando como antes
+**Arquivo**: `src/components/auth/LoginForm.tsx`
 
-### ETAPA 2 — Módulo license (mover auth)
-- Mover auth/bloqueio para `modules/license`
-- Criar re-exports nos caminhos antigos para não quebrar imports
-- Adicionar tolerância offline (salvar licença em localStorage/IndexedDB)
-- **Nada quebra** — apenas reorganização com aliases
+- Detectar mobile via `useDeviceType()` do módulo device
+- Mostrar link: "💻 Baixar versão para computador"
+- Redireciona para Google Drive (URL configurável em constants)
+- Instrução: "Instale no computador e use o mesmo e-mail"
 
-### ETAPA 3 — Módulo storage (abstração do banco)
-- Criar `storageService` com interface unificada (CRUD genérico)
-- Criar `sqliteAdapter` para Electron e `indexeddbAdapter` para PWA
-- Criar repositories: `clienteRepo, osRepo, pecaRepo`, etc.
-- Migrar 1 hook de teste (ex: `useClientes`) para usar o repository
-- **Nada quebra** — adapter inicial pode apontar para Supabase como fallback
+### 4. Recuperação de senha — Já existe!
 
-### ETAPA 4 — Electron (app desktop)
-- Configurar `electron/main.cjs` + `electron/preload.cjs`
-- Integrar `better-sqlite3` no processo principal
-- Criar schema SQLite espelhando as tabelas do Supabase
-- Expor operações via `contextBridge` (IPC)
-- Empacotar com `@electron/packager`
+**Já implementado**: `src/pages/RecuperarSenhaPage.tsx` + `useRecuperarSenha()` + link "Esqueci minha senha" no `LoginForm.tsx`.
 
-### ETAPA 5 — Módulo local-server
-- Criar servidor Express dentro do Electron (porta fixa 3847)
-- Endpoints REST: `/api/clientes`, `/api/os`, `/api/pecas`, etc.
-- Cada endpoint usa o `sqliteAdapter` para ler/gravar
-- Endpoint `/api/ping` para healthcheck
+**Falta apenas**: Criar a página `/reset-password` para o usuário definir a nova senha após clicar no link do e-mail.
 
-### ETAPA 6 — Módulo local-connection
-- No PWA mobile: tentar conectar por `hostname.local:3847`
-- Fallback: IP salvo localmente
-- Fallback: buscar IP no Supabase (tabela `machine_registry`)
-- `remoteAdapter` no storage que faz fetch para o servidor local
-- Retry automático + reconexão
+**Arquivo novo**: `src/pages/ResetPasswordPage.tsx`
+- Detectar token de recovery na URL
+- Form com nova senha + confirmação
+- Chamar `supabase.auth.updateUser({ password })`
+- Redirecionar para `/login` com mensagem de sucesso
 
-### ETAPA 7 — Migração dos hooks restantes
-- Migrar todos os 51 hooks para usar repositories do storage
-- Remover dependência direta do Supabase nos hooks de dados
-- Supabase permanece apenas em `modules/license/api/`
+**Rota**: Adicionar em `App.tsx`: `<Route path="/reset-password" element={<ResetPasswordPage />} />`
 
-### ETAPA 8 — Registro automático da máquina
-- No Electron: capturar `os.hostname()` e registrar no Supabase após login
-- No PWA: buscar dados da máquina registrada para o tenant
-- Atualizar IP automaticamente quando mudar
+### 5. Avisos de vencimento — Já implementados!
 
----
+**Já funciona** em `usePlanos.ts` + `BloqueioAviso.tsx` + `BloqueioProvider.tsx`:
+- Teste: aviso todos os dias com countdown
+- Pago: aviso nos últimos 7 dias
+- Tolerância de 15 dias pós-vencimento (suave → forte → urgente)
+- Bloqueio total após 15 dias
 
-## Fluxo final por modo
+**Melhoria**: Adicionar marcos específicos solicitados (10, 7, 3, 1 dia):
+- Ajustar `usePlanos.ts` para usar níveis: `info` (10+ dias), `suave` (7 dias), `forte` (3 dias), `urgente` (1 dia/hoje)
+- Já está parcialmente assim, ajustar thresholds para plano pago
 
-### Desktop-only
-```
-UI → Hook → Repository → sqliteAdapter → SQLite local
-```
+### 6. Tela de bloqueio — Já existe!
 
-### Mobile-only
-```
-UI → Hook → Repository → indexeddbAdapter → IndexedDB local
-```
+`BloqueioScreen.tsx` já mostra:
+- Mensagem "Acesso suspenso"
+- Botão WhatsApp com número correto (5548999385829)
 
-### Desktop + Mobile (híbrido)
-```
-[PC]  UI → Hook → Repository → sqliteAdapter → SQLite
-[Cel] UI → Hook → Repository → remoteAdapter → fetch → PC:3847 → SQLite
-```
+**Melhoria**: Adicionar espaço para "botão de pagamento futuro" (placeholder desabilitado ou seção visual).
+
+### 7. Conta deletada — Já tratada!
+
+AuthProvider já faz logout silencioso com erro genérico "E-mail ou senha inválidos" para contas órfãs. Não mostra "Acesso não disponível" para contas deletadas. ✅
+
+### 8. Escolha de modo de uso (pós-login)
+
+**Arquivo novo**: `src/pages/EscolhaModoPage.tsx`
+
+Tela simples pós-login (primeira vez):
+- "Só celular" → salva modo, vai pro dashboard
+- "Só computador" → salva modo, vai pro dashboard  
+- "Computador + Celular" → explica conexão Wi-Fi, salva modo
+
+Usa `useDeviceMode()` do módulo device.
+Modo salvo em `localStorage` (já implementado em `deviceService.ts`).
+Se já escolheu antes, pula direto.
+
+**Rota**: `/escolha-modo` — mostrar após primeiro login quando `getDeviceMode() === null`
 
 ---
 
-## Riscos e mitigações
+### Arquivos alterados/criados
 
-1. **better-sqlite3 requer rebuild nativo no Electron** → usar `electron-rebuild`
-2. **IndexedDB tem limite de storage** → avisar usuário se dados > 500MB
-3. **hostname.local nem sempre resolve** → fallback IP automático
-4. **Migração gradual pode ter estado misto** → manter Supabase como fallback até etapa 7 completa
+| Arquivo | Ação |
+|---------|------|
+| `src/pages/LoginPage.tsx` | Alterar — mobile-first, badge teste grátis |
+| `src/components/auth/LoginForm.tsx` | Alterar — inputs maiores, link download desktop |
+| `src/components/auth/LoginHeroPanel.tsx` | Alterar — adicionar texto teste grátis |
+| `src/pages/ResetPasswordPage.tsx` | **Criar** — redefinir senha |
+| `src/pages/EscolhaModoPage.tsx` | **Criar** — escolha de modo |
+| `src/App.tsx` | Alterar — adicionar rotas |
+| `src/hooks/usePlanos.ts` | Alterar — thresholds de aviso para plano pago |
+| `src/components/layout/BloqueioScreen.tsx` | Alterar — placeholder pagamento futuro |
+| `src/components/layout/AuthProvider.tsx` | Alterar — redirecionar para escolha de modo na 1ª vez |
+| `src/lib/constants.ts` | Alterar — adicionar URL download desktop |
+| `index.html` | Alterar — meta viewport com interactive-widget |
 
----
+### Resultado
 
-## Começar por: ETAPA 1
-
-Criar a estrutura de pastas + módulo device + tabela machine_registry.
+- Login mobile com teclado funcionando corretamente
+- Teste grátis visível e claro
+- Recuperação de senha completa (faltava só a página de reset)
+- Botão de download do desktop no mobile
+- Escolha de modo de uso após primeiro login
+- Avisos de vencimento com marcos em 10/7/3/1 dias
+- Tela de bloqueio com placeholder para pagamento futuro
+- Tudo sem quebrar arquitetura local-first

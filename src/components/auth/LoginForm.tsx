@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Link } from 'react-router-dom';
+import { detectDeviceType } from '@/modules/device';
+import { DOWNLOAD_DESKTOP_URL } from '@/lib/constants';
 
 interface LoginFormProps {
   email: string;
@@ -23,6 +25,7 @@ export function LoginForm({
 }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const isMobile = detectDeviceType() === 'mobile';
 
   useEffect(() => {
     if (!lockedUntil) { setCountdown(0); return; }
@@ -60,7 +63,7 @@ export function LoginForm({
             value={email}
             onChange={(e) => onEmailChange(e.target.value)}
             placeholder="seu@email.com"
-            className="pl-9"
+            className="pl-9 h-12"
             maxLength={200}
             required
             disabled={isLocked}
@@ -77,7 +80,7 @@ export function LoginForm({
             value={senha}
             onChange={(e) => onSenhaChange(e.target.value)}
             placeholder="••••••••"
-            className="pl-9 pr-10"
+            className="pl-9 pr-10 h-12"
             minLength={6}
             required
             disabled={isLocked}
@@ -103,9 +106,27 @@ export function LoginForm({
         </Link>
       </div>
 
-      <Button type="submit" className="w-full h-11 font-semibold" disabled={loading || isLocked}>
+      <Button type="submit" className="w-full h-12 font-semibold text-base" disabled={loading || isLocked}>
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Entrar'}
       </Button>
+
+      {isMobile && (
+        <a
+          href={DOWNLOAD_DESKTOP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors pt-2"
+        >
+          <Monitor className="h-4 w-4" />
+          <span>Baixar versão para computador</span>
+        </a>
+      )}
+
+      {isMobile && (
+        <p className="text-xs text-center text-muted-foreground">
+          Instale no computador e use o mesmo e-mail
+        </p>
+      )}
     </form>
   );
 }
