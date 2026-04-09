@@ -110,13 +110,7 @@ export function LoginForm({
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Entrar'}
       </Button>
 
-      <div className="text-center space-y-2">
-        <div>
-          <span className="text-sm text-muted-foreground">Não tem conta? </span>
-          <Link to="/criar-conta" className="text-sm text-primary font-medium hover:underline">
-            Criar conta grátis
-          </Link>
-        </div>
+      <div className="text-center">
         <Link
           to="/criar-conta"
           className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-sm font-semibold px-5 py-2 rounded-full hover:bg-primary/20 transition-colors"
