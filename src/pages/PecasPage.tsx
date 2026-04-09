@@ -85,22 +85,22 @@ export default function PecasPage() {
     <AppLayout>
       <PageHeader titulo="Peças & Produtos" subtitulo="Catálogo e controle de estoque">
         <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" onClick={() => setCategoriasOpen(true)} className="gap-2">
-            <Tags className="h-4 w-4" /> Categorias
+          <Button variant="outline" onClick={() => setCategoriasOpen(true)} className="gap-2 min-h-[44px]">
+            <Tags className="h-4 w-4" /> <span className="hidden sm:inline">Categorias</span>
           </Button>
-          <Button variant="outline" onClick={handleInventario} disabled={criarInv.isPending} className="gap-2">
-            <ClipboardList className="h-4 w-4" /> Inventário
+          <Button variant="outline" onClick={handleInventario} disabled={criarInv.isPending} className="gap-2 min-h-[44px]">
+            <ClipboardList className="h-4 w-4" /> <span className="hidden sm:inline">Inventário</span>
           </Button>
-          <Button variant="outline" onClick={() => setScannerOpen(true)} className="gap-2">
-            <ScanLine className="h-4 w-4" /> Escanear QR
+          <Button variant="outline" onClick={() => setScannerOpen(true)} className="gap-2 min-h-[44px]">
+            <ScanLine className="h-4 w-4" /> <span className="hidden sm:inline">Escanear QR</span>
           </Button>
-          <Button variant="outline" onClick={() => setEtiquetasOpen(true)} className="gap-2">
-            <QrCode className="h-4 w-4" /> Etiquetas QR
+          <Button variant="outline" onClick={() => setEtiquetasOpen(true)} className="gap-2 min-h-[44px]">
+            <QrCode className="h-4 w-4" /> <span className="hidden sm:inline">Etiquetas QR</span>
           </Button>
-          <Button variant="outline" onClick={() => setEntradaPeca({} as Peca)} className="gap-2">
-            <PackagePlus className="h-4 w-4" /> Entrada
+          <Button variant="outline" onClick={() => setEntradaPeca({} as Peca)} className="gap-2 min-h-[44px]">
+            <PackagePlus className="h-4 w-4" /> <span className="hidden sm:inline">Entrada</span>
           </Button>
-          <Button onClick={() => { setEditando(null); setFormOpen(true); }} className="gap-2">
+          <Button onClick={() => { setEditando(null); setFormOpen(true); }} className="gap-2 min-h-[44px]">
             <Plus className="h-4 w-4" /> Nova Peça
           </Button>
         </div>

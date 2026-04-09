@@ -38,7 +38,7 @@ export default function ClientesPage() {
   return (
     <AppLayout>
       <PageHeader titulo="Clientes" subtitulo="Gerencie seus clientes">
-        <Button onClick={() => { setEditando(null); setModalOpen(true); }} className="gap-2">
+        <Button onClick={() => { setEditando(null); setModalOpen(true); }} className="gap-2 min-h-[44px]">
           <Plus className="h-4 w-4" /> Novo Cliente
         </Button>
       </PageHeader>
