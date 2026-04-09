@@ -1,4 +1,21 @@
 // Types
-export type { ConnectionStatus, DiscoveryMethod, ConnectionInfo, SavedConnection } from './types';
+export type { ConnectionStatus, DiscoveryMethod, ConnectionInfo, SavedConnection, DiscoveryResult, RetryConfig } from './types';
 
-// Implementação será adicionada na Etapa 6
+// Services
+export {
+  discoverServer,
+  connectManual,
+  pingServer,
+  getSavedConnection,
+  saveConnection,
+  clearSavedConnection,
+  getRetryDelay,
+  createInitialConnectionInfo,
+  DEFAULT_RETRY_CONFIG,
+} from './services/connectionService';
+
+// Hooks
+export { useLocalConnection } from './hooks/useLocalConnection';
+
+// Components
+export { ConnectionStatusCard } from './components/ConnectionStatusCard';

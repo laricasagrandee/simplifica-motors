@@ -11,6 +11,7 @@ export interface ConnectionInfo {
   method: DiscoveryMethod | null;
   lastConnected: string | null;
   retryCount: number;
+  error?: string;
 }
 
 /** Configuração de conexão salva localmente */
@@ -19,4 +20,20 @@ export interface SavedConnection {
   ip: string;
   port: number;
   lastUsed: string;
+}
+
+/** Resultado de uma tentativa de descoberta */
+export interface DiscoveryResult {
+  success: boolean;
+  url: string;
+  method: DiscoveryMethod;
+  machineName?: string;
+}
+
+/** Configuração de retry */
+export interface RetryConfig {
+  maxRetries: number;
+  initialDelayMs: number;
+  maxDelayMs: number;
+  backoffFactor: number;
 }
