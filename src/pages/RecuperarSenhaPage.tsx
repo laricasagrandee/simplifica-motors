@@ -16,7 +16,7 @@ export default function RecuperarSenhaPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-6">
+    <div className="min-h-[100dvh] flex items-center justify-center bg-background p-6">
       <div className="w-full max-w-sm">
         <div className="flex items-baseline justify-center gap-0.5 mb-8">
           <span className="font-display font-extrabold text-2xl text-foreground">Facilita</span>
@@ -60,14 +60,15 @@ export default function RecuperarSenhaPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="seu@email.com"
-                      className="pl-9"
+                      className="pl-9 h-12"
                       maxLength={200}
                       required
+                    />
                     />
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
+                <Button type="submit" className="w-full h-12 font-semibold" disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Enviar link de recuperação'}
                 </Button>
               </form>
