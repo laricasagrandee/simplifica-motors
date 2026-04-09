@@ -1,5 +1,5 @@
 import { ReactNode, createContext, useContext } from 'react';
-import { useVerificarBloqueio } from '@/hooks/usePlanos';
+import { useVerificarBloqueio } from '@/modules/license/hooks/useLicense';
 import { BloqueioScreen } from './BloqueioScreen';
 import { BloqueioAviso } from './BloqueioAviso';
 
