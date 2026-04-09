@@ -45,8 +45,8 @@ export function useVerificarBloqueio() {
 export function useTrocarPlano() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ configId }: { configId: string }) => {
-      await renewLicense(configId);
+    mutationFn: async ({ configId, dataVencimentoAnterior, periodoDias }: { configId: string; dataVencimentoAnterior: string | null; periodoDias?: number }) => {
+      await renewLicense(configId, dataVencimentoAnterior, periodoDias);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['plano-atual'] });
