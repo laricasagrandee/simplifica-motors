@@ -40,7 +40,7 @@ function RoutePersistence() {
   const location = useLocation();
 
   useEffect(() => {
-    if (!["/login", "/recuperar-senha", "/"].includes(location.pathname)) {
+    if (!["/login", "/recuperar-senha", "/reset-password", "/escolha-modo", "/"].includes(location.pathname)) {
       localStorage.setItem(LAST_ROUTE_KEY, `${location.pathname}${location.search}${location.hash}`);
     }
   }, [location.pathname, location.search, location.hash]);
