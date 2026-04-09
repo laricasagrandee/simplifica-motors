@@ -5,21 +5,17 @@ const DEVICE_MODE_KEY = 'fm:device-mode';
 
 /**
  * Detecta se o dispositivo é desktop ou mobile.
- * Usa user-agent + tela como heurística.
  */
 export function detectDeviceType(): DeviceType {
   if (typeof window === 'undefined') return 'desktop';
-
   const ua = navigator.userAgent.toLowerCase();
   const isMobile = /android|iphone|ipad|ipod|mobile/i.test(ua);
   const isSmallScreen = window.innerWidth < 768;
-
   return isMobile || isSmallScreen ? 'mobile' : 'desktop';
 }
 
 /**
  * Retorna o modo de uso salvo localmente.
- * Padrão: 'desktop-only' para PC, 'mobile-only' para celular.
  */
 export function getDeviceMode(): DeviceMode {
   const saved = localStorage.getItem(DEVICE_MODE_KEY) as DeviceMode | null;
@@ -38,12 +34,13 @@ export function setDeviceMode(mode: DeviceMode): void {
 
 /**
  * Captura o hostname da máquina.
- * No Electron, usa a API exposta via preload (window.electronAPI.getHostname).
- * No navegador, retorna null.
+ * No Tauri, usa a API exposta via window.__TAURI__.
+ * No navegador puro, retorna null.
  */
 export function getMachineName(): string | null {
-  if (typeof window !== 'undefined' && (window as any).electronAPI?.getHostname) {
-    return (window as any).electronAPI.getHostname();
+  if (typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__) {
+    // O hostname é injetado pelo setup do Tauri (vide main.rs / setup)
+    return (window as any).__FM_HOSTNAME__ ?? null;
   }
   return null;
 }
@@ -67,8 +64,11 @@ export function getDeviceInfo(): DeviceInfo {
 }
 
 /**
- * Verifica se estamos rodando dentro do Electron.
+ * Verifica se estamos rodando dentro do Tauri (app desktop).
  */
-export function isElectron(): boolean {
-  return typeof window !== 'undefined' && !!(window as any).electronAPI;
+export function isTauri(): boolean {
+  return typeof window !== 'undefined' && !!(window as any).__TAURI_INTERNALS__;
 }
+
+/** @deprecated Use isTauri() */
+export const isElectron = isTauri;

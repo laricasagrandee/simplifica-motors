@@ -9,7 +9,8 @@ export {
   getMachineName,
   getLocalServerPort,
   getDeviceInfo,
-  isElectron,
+  isTauri,
+  isElectron, // deprecated alias
 } from './services/deviceService';
 
 // Hooks
