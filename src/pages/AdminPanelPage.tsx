@@ -55,7 +55,7 @@ export default function AdminPanelPage() {
   if (checking) return null;
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-[100dvh] bg-slate-900">
       <AdminHeader />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         {isLoading ? (

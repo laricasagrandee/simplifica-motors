@@ -32,8 +32,8 @@ export default function OSDetalhePage() {
 
   return (
     <AppLayout>
-      <div className="flex items-center justify-between mb-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/os')} className="gap-1 -ml-2">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/os')} className="gap-1 -ml-2 min-h-[44px]">
           <ArrowLeft className="h-4 w-4" /> Ordens de Serviço
         </Button>
         <OSAcoesMenu os={os} itens={itens ?? []} />

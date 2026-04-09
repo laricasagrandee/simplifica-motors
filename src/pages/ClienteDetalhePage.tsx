@@ -24,7 +24,7 @@ export default function ClienteDetalhePage() {
 
   return (
     <AppLayout>
-      <Button variant="ghost" size="sm" onClick={() => navigate('/clientes')} className="gap-1 mb-4 -ml-2">
+      <Button variant="ghost" size="sm" onClick={() => navigate('/clientes')} className="gap-1 mb-4 -ml-2 min-h-[44px]">
         <ArrowLeft className="h-4 w-4" /> Clientes
       </Button>
       <ClienteCard cliente={cliente} onEditar={() => setFormOpen(true)} />
