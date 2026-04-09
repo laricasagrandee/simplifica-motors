@@ -11,15 +11,44 @@ export async function fetchLicenseData(tenantId: string) {
   return data;
 }
 
-/** Renova o plano (trocar/ativar) */
-export async function renewLicense(configId: string) {
-  const venc = new Date();
-  venc.setMonth(venc.getMonth() + 1);
+/**
+ * Calcula a próxima data de vencimento baseada na data anterior.
+ * Se a data anterior já passou, avança ciclos até ficar no futuro.
+ * Nunca usa "hoje" como base — preserva o ciclo fixo do plano.
+ */
+export function calcularProximoVencimento(
+  dataVencimentoAnterior: string | null,
+  periodoDias: number = 30,
+): string {
+  const agora = new Date();
+
+  if (!dataVencimentoAnterior) {
+    // Primeira ativação: usa hoje como base
+    const d = new Date(agora);
+    d.setDate(d.getDate() + periodoDias);
+    return d.toISOString();
+  }
+
+  const vencAnterior = new Date(dataVencimentoAnterior);
+  let proximo = new Date(vencAnterior);
+  proximo.setDate(proximo.getDate() + periodoDias);
+
+  // Avança ciclos até a data ficar no futuro
+  while (proximo <= agora) {
+    proximo.setDate(proximo.getDate() + periodoDias);
+  }
+
+  return proximo.toISOString();
+}
+
+/** Renova o plano (trocar/ativar) — requer data de vencimento anterior */
+export async function renewLicense(configId: string, dataVencimentoAnterior: string | null, periodoDias: number = 30) {
+  const novoVencimento = calcularProximoVencimento(dataVencimentoAnterior, periodoDias);
   const { error } = await supabase.from('configuracoes').update({
     max_funcionarios: 999,
     plano_ativo: true,
     dias_tolerancia: 15,
-    data_vencimento_plano: venc.toISOString(),
+    data_vencimento_plano: novoVencimento,
   }).eq('id', configId);
   if (error) throw error;
 }
