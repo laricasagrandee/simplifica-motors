@@ -1,4 +1,14 @@
 // Types
-export type { ServerStatus, LocalServerInfo, PingResponse } from './types';
+export type { ServerStatus, LocalServerInfo, PingResponse, ServerConfig } from './types';
 
-// Implementação será adicionada na Etapa 5
+// Services
+export {
+  getServerConfig,
+  buildPingResponse,
+  canStartServer,
+  requestStartServer,
+  requestStopServer,
+} from './services/serverService';
+
+// Hooks
+export { useLocalServer } from './hooks/useLocalServer';

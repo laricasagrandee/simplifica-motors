@@ -7,6 +7,7 @@ export interface LocalServerInfo {
   port: number;
   hostname: string | null;
   startedAt: string | null;
+  error?: string;
 }
 
 /** Resposta do endpoint /api/ping */
@@ -15,4 +16,11 @@ export interface PingResponse {
   serverTime: string;
   machineName: string;
   version: string;
+  tenantId: string;
+}
+
+/** Configuração do servidor local */
+export interface ServerConfig {
+  port: number;
+  hostname: string;
 }
