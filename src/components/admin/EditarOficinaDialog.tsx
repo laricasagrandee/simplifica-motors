@@ -26,10 +26,9 @@ const PERIODOS = [
   { label: '12 meses', dias: 365 },
 ];
 
-function calcVencimento(dias: number) {
-  const d = new Date();
-  d.setDate(d.getDate() + dias);
-  return d.toISOString().slice(0, 10);
+function calcVencimento(dias: number, dataVencimentoAnterior: string | null) {
+  const { calcularProximoVencimento } = require('@/modules/license/api/licenseApi');
+  return calcularProximoVencimento(dataVencimentoAnterior, dias).slice(0, 10);
 }
 
 function getStatusInfo(oficina: OficinaComStatus) {

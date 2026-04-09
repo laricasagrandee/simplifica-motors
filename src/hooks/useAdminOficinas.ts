@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { calcularProximoVencimento } from '@/modules/license/api/licenseApi';
 import { toast } from '@/hooks/use-toast';
 import type { Configuracao } from '@/types/database';
 
