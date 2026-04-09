@@ -64,7 +64,6 @@ export default function RecuperarSenhaPage() {
                       maxLength={200}
                       required
                     />
-                    />
                   </div>
                 </div>
 
