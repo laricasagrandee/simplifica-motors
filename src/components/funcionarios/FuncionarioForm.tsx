@@ -48,18 +48,18 @@ export function FuncionarioForm({ open, onClose, funcionario, onSalvar }: Props)
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto max-sm:h-full max-sm:max-h-full max-sm:rounded-none max-sm:border-0">
         <DialogHeader><DialogTitle>{funcionario ? 'Editar Funcionário' : 'Novo Funcionário'}</DialogTitle></DialogHeader>
         <div className="space-y-4">
-          <div><Label>Nome *</Label><Input value={nome} onChange={e => setNome(e.target.value)} className="min-h-[44px]" /></div>
+          <div><Label>Nome *</Label><Input value={nome} onChange={e => setNome(e.target.value)} className="h-12" /></div>
           <div><Label>Cargo *</Label>
             <SearchableSelect value={cargo} onValueChange={v => setCargo(v as CargoFuncionario)} options={cargoOptions} placeholder="Selecione" />
           </div>
-          <div><Label>Telefone *</Label><Input value={telefone} onChange={e => setTelefone(e.target.value)} className="min-h-[44px]" /></div>
-          <div><Label>Email</Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} className="min-h-[44px]" /></div>
-          <div><Label>Salário (R$)</Label><Input type="number" step="0.01" value={salario} onChange={e => setSalario(e.target.value)} className="min-h-[44px] font-mono" /></div>
+          <div><Label>Telefone *</Label><Input value={telefone} onChange={e => setTelefone(e.target.value)} className="h-12" /></div>
+          <div><Label>Email</Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} className="h-12" /></div>
+          <div><Label>Salário (R$)</Label><Input type="number" step="0.01" value={salario} onChange={e => setSalario(e.target.value)} className="h-12 font-mono" /></div>
           {cargo === 'mecanico' && (
-            <div><Label>Comissão (%)</Label><Input type="number" step="0.5" value={comissao} onChange={e => setComissao(e.target.value)} className="min-h-[44px] font-mono" />
+            <div><Label>Comissão (%)</Label><Input type="number" step="0.5" value={comissao} onChange={e => setComissao(e.target.value)} className="h-12 font-mono" />
               <p className="text-xs text-muted-foreground mt-1">% sobre mão de obra das OS</p></div>
           )}
-          <Button onClick={handleSalvar} className="w-full min-h-[44px] bg-accent text-accent-foreground" disabled={!nome || !telefone}>
+          <Button onClick={handleSalvar} className="w-full h-12 bg-accent text-accent-foreground" disabled={!nome || !telefone}>
             {funcionario ? 'Salvar Alterações' : 'Cadastrar'}
           </Button>
         </div>
