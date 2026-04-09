@@ -51,7 +51,7 @@ export default function VeiculosPage() {
   return (
     <AppLayout>
       <PageHeader titulo="Veículos" subtitulo="Motos e carros cadastrados">
-        <Button onClick={() => { setEditando(null); setFormOpen(true); }} className="gap-2">
+        <Button onClick={() => { setEditando(null); setFormOpen(true); }} className="gap-2 min-h-[48px]">
           <Plus className="h-4 w-4" /> Novo Veículo
         </Button>
       </PageHeader>
