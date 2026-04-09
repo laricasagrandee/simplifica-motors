@@ -74,7 +74,7 @@ export function EditarOficinaDialog({ oficina, adminInfo, open, onOpenChange }: 
   };
 
   const handleRenovar = (dias: number) => {
-    const novaData = calcVencimento(dias);
+    const novaData = calcVencimento(dias, oficina.data_vencimento_plano ?? null);
     editar.mutate({
       id: oficina.id,
       plano_ativo: true,
@@ -83,7 +83,7 @@ export function EditarOficinaDialog({ oficina, adminInfo, open, onOpenChange }: 
   };
 
   const handleTeste30 = () => {
-    const novaData = calcVencimento(30);
+    const novaData = calcVencimento(30, oficina.data_vencimento_plano ?? null);
     editar.mutate({
       id: oficina.id,
       plano_ativo: true,

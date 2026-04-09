@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAdminEditarOficina } from '@/hooks/useAdminOficinas';
+import { calcularProximoVencimento } from '@/modules/license/api/licenseApi';
 import type { OficinaComStatus } from '@/hooks/useAdminOficinas';
 
 interface Props {
@@ -12,10 +13,8 @@ interface Props {
   onOpenChange: (v: boolean) => void;
 }
 
-function defaultVencimento() {
-  const d = new Date();
-  d.setDate(d.getDate() + 30);
-  return d.toISOString().slice(0, 10);
+function defaultVencimento(dataAnterior: string | null) {
+  return calcularProximoVencimento(dataAnterior, 30).slice(0, 10);
 }
 
 export function AtivarPlanoDialog({ oficina, open, onOpenChange }: Props) {
