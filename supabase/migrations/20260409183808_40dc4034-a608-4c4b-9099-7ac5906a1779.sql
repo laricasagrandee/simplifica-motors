@@ -1,0 +1,1 @@
+DELETE FROM device_fingerprints WHERE fingerprint = '217fb8cd04d353264daf620c7b987226777faf31c4b6f173cc69c257ba7c2067';
