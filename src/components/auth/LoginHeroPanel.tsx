@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 export function LoginHeroPanel() {
   return (
     <>
@@ -7,9 +9,12 @@ export function LoginHeroPanel() {
           <span className="font-display font-extrabold text-4xl text-primary">Motors</span>
         </div>
         <p className="text-lg text-muted-foreground mb-4">Sua oficina, simplificada.</p>
-        <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-sm font-semibold px-4 py-1.5 rounded-full">
+        <Link
+          to="/criar-conta"
+          className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-sm font-semibold px-5 py-2 rounded-full hover:bg-primary/20 transition-colors cursor-pointer"
+        >
           ✨ 30 dias grátis para testar
-        </span>
+        </Link>
       </div>
 
       {/* Testimonial */}
