@@ -10,6 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import { Loader2, KeyRound, Gift, RefreshCw } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { calcularProximoVencimento } from '@/modules/license/api/licenseApi';
 import type { OficinaComStatus } from '@/hooks/useAdminOficinas';
 
 interface Props {
@@ -27,7 +28,6 @@ const PERIODOS = [
 ];
 
 function calcVencimento(dias: number, dataVencimentoAnterior: string | null) {
-  const { calcularProximoVencimento } = require('@/modules/license/api/licenseApi');
   return calcularProximoVencimento(dataVencimentoAnterior, dias).slice(0, 10);
 }
 
