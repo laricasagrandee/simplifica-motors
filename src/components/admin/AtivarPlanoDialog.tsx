@@ -18,7 +18,7 @@ function defaultVencimento(dataAnterior: string | null) {
 }
 
 export function AtivarPlanoDialog({ oficina, open, onOpenChange }: Props) {
-  const [vencimento, setVencimento] = useState(defaultVencimento());
+  const [vencimento, setVencimento] = useState(defaultVencimento(oficina.data_vencimento_plano ?? null));
   const editar = useAdminEditarOficina();
 
   const handleAtivar = () => {
