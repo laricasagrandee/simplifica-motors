@@ -80,12 +80,26 @@ export function useVerificarBloqueio() {
             mensagem: `Seu teste grátis acaba em ${diff} dia${diff > 1 ? 's' : ''}. Entre em contato para ativar seu plano.`,
           };
         }
-        // Pago: aviso nos últimos 7 dias
+        // Pago: avisos progressivos nos últimos 10 dias
+        if (diff <= 3) {
+          return {
+            bloqueado: false, emTolerancia: false, emPreAviso: true, nivel: 'urgente' as const,
+            diasRestantes: diff,
+            mensagem: `Seu acesso vence em ${diff} dia${diff > 1 ? 's' : ''}! Renove agora.`,
+          };
+        }
         if (diff <= 7) {
+          return {
+            bloqueado: false, emTolerancia: false, emPreAviso: true, nivel: 'forte' as const,
+            diasRestantes: diff,
+            mensagem: `Seu acesso vence em ${diff} dias. Considere renovar.`,
+          };
+        }
+        if (diff <= 10) {
           return {
             bloqueado: false, emTolerancia: false, emPreAviso: true, nivel: 'info' as const,
             diasRestantes: diff,
-            mensagem: `Seu acesso vence em ${diff} dia${diff > 1 ? 's' : ''}. Considere renovar.`,
+            mensagem: `Seu acesso vence em ${diff} dias.`,
           };
         }
         return semAviso;

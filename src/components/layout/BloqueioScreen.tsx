@@ -1,4 +1,5 @@
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert, CreditCard } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { SUPORTE_WHATSAPP, SUPORTE_NOME } from '@/lib/constants';
 import { useConfiguracoes } from '@/hooks/useConfiguracoes';
 
@@ -20,7 +21,7 @@ export function BloqueioScreen() {
   const whatsappLink = `https://wa.me/${SUPORTE_WHATSAPP}?text=${mensagem}`;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center p-6">
+    <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-center text-center p-6">
       <div className="flex items-baseline gap-0.5 mb-6">
         <span className="font-display font-extrabold text-3xl text-foreground">Facilita</span>
         <span className="font-display font-extrabold text-3xl text-primary">Motors</span>
@@ -37,6 +38,21 @@ export function BloqueioScreen() {
         <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="text-accent font-mono font-bold text-lg">
           {formatarTelefone(SUPORTE_WHATSAPP)}
         </a>
+      </div>
+
+      {/* Placeholder para pagamento futuro */}
+      <div className="max-w-sm w-full">
+        <Button
+          disabled
+          variant="outline"
+          className="w-full h-12 gap-2 opacity-50 cursor-not-allowed"
+        >
+          <CreditCard className="h-4 w-4" />
+          Pagar online (em breve)
+        </Button>
+        <p className="text-xs text-muted-foreground mt-2">
+          Em breve você poderá renovar diretamente pelo sistema.
+        </p>
       </div>
     </div>
   );
