@@ -119,17 +119,15 @@ export function LoginForm({
         </Link>
       </div>
 
-      {isMobile && (
-        <a
-          href={DOWNLOAD_DESKTOP_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors pt-2"
-        >
-          <Monitor className="h-4 w-4" />
-          <span>Usar no computador? Baixe aqui</span>
-        </a>
-      )}
+      <a
+        href={DOWNLOAD_DESKTOP_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors pt-2"
+      >
+        <Monitor className="h-4 w-4" />
+        <span>Baixe a versão para computador</span>
+      </a>
     </form>
   );
 }
