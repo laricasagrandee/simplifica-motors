@@ -1,0 +1,30 @@
+-- Tabela para registro de máquinas (desktop) vinculadas a um tenant.
+-- Usada pelo celular para descobrir como conectar no PC da oficina.
+--
+-- EXECUTAR MANUALMENTE no Supabase SQL Editor:
+--
+-- CREATE TABLE IF NOT EXISTS public.machine_registry (
+--   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+--   email text NOT NULL,
+--   tenant_id uuid NOT NULL REFERENCES public.oficinas(id) ON DELETE CASCADE,
+--   machine_name text NOT NULL,
+--   porta integer NOT NULL DEFAULT 3847,
+--   ip text,
+--   modo text NOT NULL DEFAULT 'desktop-only',
+--   criado_em timestamptz NOT NULL DEFAULT now(),
+--   atualizado_em timestamptz NOT NULL DEFAULT now(),
+--   UNIQUE (email, tenant_id)
+-- );
+--
+-- ALTER TABLE public.machine_registry ENABLE ROW LEVEL SECURITY;
+--
+-- CREATE POLICY "Usuários autenticados podem ler registros do próprio tenant"
+--   ON public.machine_registry FOR SELECT TO authenticated
+--   USING (tenant_id IN (
+--     SELECT f.tenant_id FROM public.funcionarios f WHERE f.user_id = auth.uid()
+--   ));
+--
+-- CREATE POLICY "Usuários autenticados podem inserir/atualizar próprio registro"
+--   ON public.machine_registry FOR ALL TO authenticated
+--   USING (email = (SELECT auth.jwt() ->> 'email'))
+--   WITH CHECK (email = (SELECT auth.jwt() ->> 'email'));
