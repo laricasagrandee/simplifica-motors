@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { isElectron, getDeviceMode } from '@/modules/device';
+import { isTauri, getDeviceMode } from '@/modules/device';
 import {
   canStartServer,
   requestStartServer,
@@ -16,7 +16,7 @@ const INITIAL_STATE: LocalServerInfo = {
 
 /**
  * Hook para controlar o servidor local no PC.
- * Inicia automaticamente no Electron quando o modo é desktop-only ou desktop-mobile.
+ * Inicia automaticamente no Tauri quando o modo é desktop-only ou desktop-mobile.
  */
 export function useLocalServer() {
   const [server, setServer] = useState<LocalServerInfo>(INITIAL_STATE);
@@ -33,18 +33,14 @@ export function useLocalServer() {
     setServer(INITIAL_STATE);
   }, []);
 
-  // Auto-start no Electron quando modo requer servidor
+  // Auto-start no Tauri quando modo requer servidor
   useEffect(() => {
-    if (!isElectron()) return;
+    if (!isTauri()) return;
 
     const mode = getDeviceMode();
     if (mode === 'desktop-only' || mode === 'desktop-mobile') {
       start();
     }
-
-    return () => {
-      // Cleanup não para o servidor — ele continua rodando no processo Electron
-    };
   }, [start]);
 
   return {
@@ -52,6 +48,6 @@ export function useLocalServer() {
     start,
     stop,
     isRunning: server.status === 'running',
-    isElectronEnv: isElectron(),
+    isTauriEnv: isTauri(),
   };
 }
