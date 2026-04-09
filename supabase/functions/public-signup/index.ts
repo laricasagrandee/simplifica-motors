@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { email, password, nome } = body;
+    const { email, password, nome, fingerprint, device_type } = body;
 
     if (!email || !password || !nome) {
       return new Response(
@@ -44,16 +44,51 @@ Deno.serve(async (req) => {
 
     const cleanEmail = email.replace(/[^a-zA-Z0-9@._+-]/g, "").trim().toLowerCase();
     const cleanNome = nome.trim().slice(0, 200);
+    const cleanFingerprint = typeof fingerprint === "string" ? fingerprint.slice(0, 128) : null;
+    const cleanDeviceType = typeof device_type === "string" ? device_type.slice(0, 20) : "unknown";
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // 1) Create auth user (email confirmation required)
+    // ─── Trial abuse checks ──────────────────────────────────
+    // Check if email already used a trial
+    const { data: emailTrials } = await adminClient
+      .from("device_fingerprints")
+      .select("id")
+      .eq("email", cleanEmail)
+      .not("trial_started_at", "is", null)
+      .limit(1);
+
+    if (emailTrials && emailTrials.length > 0) {
+      return new Response(
+        JSON.stringify({ error: "Este e-mail já utilizou o período de teste gratuito." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Check if device fingerprint already used a trial
+    if (cleanFingerprint) {
+      const { data: fpTrials } = await adminClient
+        .from("device_fingerprints")
+        .select("id")
+        .eq("fingerprint", cleanFingerprint)
+        .not("trial_started_at", "is", null)
+        .limit(1);
+
+      if (fpTrials && fpTrials.length > 0) {
+        return new Response(
+          JSON.stringify({ error: "Este dispositivo já utilizou o período de teste gratuito." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
+    // ─── Create user ──────────────────────────────────────────
     const { data: newUser, error: createUserError } = await adminClient.auth.admin.createUser({
       email: cleanEmail,
       password,
-      email_confirm: false, // User must confirm email
+      email_confirm: false,
     });
 
     if (createUserError) {
@@ -68,12 +103,16 @@ Deno.serve(async (req) => {
 
     const userId = newUser.user.id;
 
-    // 2) Create configuracoes (tenant) with 30-day trial
-    const vencimento = new Date(Date.now() + 30 * 86400000).toISOString();
+    // ─── Create tenant with 30-day trial ──────────────────────
+    const now = new Date();
+    const trialEnd = new Date(now.getTime() + 30 * 86400000);
+    const vencimento = trialEnd.toISOString();
+
     const { data: config, error: configError } = await adminClient
       .from("configuracoes")
       .insert({
         nome_fantasia: `Oficina de ${cleanNome}`,
+        plano: "teste",
         plano_ativo: true,
         data_vencimento_plano: vencimento,
         max_funcionarios: 999,
@@ -90,7 +129,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 3) Create funcionario record
+    // ─── Create funcionario record ────────────────────────────
     const { error: funcError } = await adminClient.from("funcionarios").insert({
       user_id: userId,
       nome: cleanNome,
@@ -110,10 +149,17 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 4) Send confirmation email via Supabase Auth
-    // The user was created with email_confirm: false, so Supabase will send the confirmation email automatically
-    // We also generate a magic link as backup
-    const siteUrl = req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://facilitamotors.com.br";
+    // ─── Register device fingerprint ──────────────────────────
+    if (cleanFingerprint) {
+      await adminClient.from("device_fingerprints").insert({
+        fingerprint: cleanFingerprint,
+        device_type: cleanDeviceType,
+        email: cleanEmail,
+        tenant_id: config.id,
+        trial_started_at: now.toISOString(),
+        trial_ends_at: vencimento,
+      });
+    }
 
     return new Response(
       JSON.stringify({
