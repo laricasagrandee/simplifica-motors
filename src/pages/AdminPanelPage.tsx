@@ -5,8 +5,10 @@ import { MASTER_EMAIL } from '@/lib/constants';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { AdminResumoCards } from '@/components/admin/AdminResumoCards';
 import { OficinasTable } from '@/components/admin/OficinasTable';
+import { AdminConfigPrecos } from '@/components/admin/AdminConfigPrecos';
+import { AdminConfigGeral } from '@/components/admin/AdminConfigGeral';
 import { useAdminOficinas, useFuncionariosCount } from '@/hooks/useAdminOficinas';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Settings, DollarSign } from 'lucide-react';
 
 export default function AdminPanelPage() {
   const navigate = useNavigate();
@@ -65,8 +67,22 @@ export default function AdminPanelPage() {
         ) : (
           <>
             <AdminResumoCards oficinas={oficinas || []} />
-
             <OficinasTable oficinas={oficinas || []} totalFuncionarios={totalFuncionarios || 0} admins={admins} />
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
+                <h3 className="text-white font-display font-bold mb-4 flex items-center gap-2">
+                  <Settings className="h-4 w-4" /> Configurações Gerais
+                </h3>
+                <AdminConfigGeral />
+              </div>
+              <div className="bg-slate-800 rounded-xl border border-slate-700 p-5">
+                <h3 className="text-white font-display font-bold mb-4 flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" /> Preços dos Planos
+                </h3>
+                <AdminConfigPrecos />
+              </div>
+            </div>
           </>
         )}
       </main>

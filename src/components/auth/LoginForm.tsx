@@ -5,8 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Link } from 'react-router-dom';
-import { detectDeviceType } from '@/modules/device';
-import { DOWNLOAD_DESKTOP_URL } from '@/lib/constants';
+import { useAppSetting } from '@/modules/license/services/useAppSettings';
 
 interface LoginFormProps {
   email: string;
@@ -25,7 +24,7 @@ export function LoginForm({
 }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  const isMobile = detectDeviceType() === 'mobile';
+  const { value: downloadUrl } = useAppSetting('download_desktop_url', 'https://drive.google.com/drive/folders/PLACEHOLDER');
 
   useEffect(() => {
     if (!lockedUntil) { setCountdown(0); return; }
@@ -120,7 +119,7 @@ export function LoginForm({
       </div>
 
       <a
-        href={DOWNLOAD_DESKTOP_URL}
+        href={downloadUrl}
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors pt-2"
