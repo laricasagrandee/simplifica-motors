@@ -74,7 +74,7 @@ export function OficinasTable({ oficinas, totalFuncionarios, admins = [] }: Prop
 
   const handleConfirmar = () => {
     if (!confirmacao) return;
-    bloquear.mutate({ id: confirmacao.oficina.id, liberar: confirmacao.liberar }, {
+    bloquear.mutate({ id: confirmacao.oficina.id, liberar: confirmacao.liberar, dataVencimentoAnterior: confirmacao.oficina.data_vencimento_plano ?? null }, {
       onSuccess: () => setConfirmacao(null),
     });
   };

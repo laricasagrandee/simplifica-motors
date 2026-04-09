@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { calcularProximoVencimento } from '@/modules/license/api/licenseApi';
 import { toast } from '@/hooks/use-toast';
 import type { Configuracao } from '@/types/database';
 
@@ -114,12 +115,10 @@ export function useAdminExcluirOficina() {
 export function useAdminBloquearOficina() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, liberar }: { id: string; liberar: boolean }) => {
+    mutationFn: async ({ id, liberar, dataVencimentoAnterior }: { id: string; liberar: boolean; dataVencimentoAnterior?: string | null }) => {
       const updates: Record<string, unknown> = { plano_ativo: liberar };
       if (liberar) {
-        const venc = new Date();
-        venc.setDate(venc.getDate() + 30);
-        updates.data_vencimento_plano = venc.toISOString();
+        updates.data_vencimento_plano = calcularProximoVencimento(dataVencimentoAnterior ?? null, 30);
       }
       const { error } = await supabase.from('configuracoes').update(updates as any).eq('id', id);
       if (error) throw error;

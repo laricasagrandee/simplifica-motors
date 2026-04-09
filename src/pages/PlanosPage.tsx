@@ -15,7 +15,7 @@ export default function PlanosPage() {
     <AppLayout>
       <PageHeader titulo="Planos" subtitulo="Escolha o melhor plano para sua oficina" />
       <PlanosComparativo planoAtual={normalizarPlano(plano.data?.plano)}
-        onAssinar={_ => config.data && trocar.mutate({ configId: config.data.id })} />
+        onAssinar={_ => config.data && trocar.mutate({ configId: config.data.id, dataVencimentoAnterior: config.data.data_vencimento_plano ?? null })} />
       <PlanosFAQ />
     </AppLayout>
   );

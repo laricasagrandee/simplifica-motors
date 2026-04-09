@@ -10,6 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import { Loader2, KeyRound, Gift, RefreshCw } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { calcularProximoVencimento } from '@/modules/license/api/licenseApi';
 import type { OficinaComStatus } from '@/hooks/useAdminOficinas';
 
 interface Props {
@@ -26,10 +27,8 @@ const PERIODOS = [
   { label: '12 meses', dias: 365 },
 ];
 
-function calcVencimento(dias: number) {
-  const d = new Date();
-  d.setDate(d.getDate() + dias);
-  return d.toISOString().slice(0, 10);
+function calcVencimento(dias: number, dataVencimentoAnterior: string | null) {
+  return calcularProximoVencimento(dataVencimentoAnterior, dias).slice(0, 10);
 }
 
 function getStatusInfo(oficina: OficinaComStatus) {
@@ -75,7 +74,7 @@ export function EditarOficinaDialog({ oficina, adminInfo, open, onOpenChange }: 
   };
 
   const handleRenovar = (dias: number) => {
-    const novaData = calcVencimento(dias);
+    const novaData = calcVencimento(dias, oficina.data_vencimento_plano ?? null);
     editar.mutate({
       id: oficina.id,
       plano_ativo: true,
@@ -84,7 +83,7 @@ export function EditarOficinaDialog({ oficina, adminInfo, open, onOpenChange }: 
   };
 
   const handleTeste30 = () => {
-    const novaData = calcVencimento(30);
+    const novaData = calcVencimento(30, oficina.data_vencimento_plano ?? null);
     editar.mutate({
       id: oficina.id,
       plano_ativo: true,
