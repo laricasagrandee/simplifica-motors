@@ -110,6 +110,16 @@ export function LoginForm({
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Entrar'}
       </Button>
 
+      <div className="text-center space-y-1">
+        <div>
+          <span className="text-sm text-muted-foreground">Não tem conta? </span>
+          <Link to="/criar-conta" className="text-sm text-primary font-medium hover:underline">
+            Criar conta grátis
+          </Link>
+        </div>
+        <p className="text-xs text-muted-foreground">30 dias grátis • Sem compromisso</p>
+      </div>
+
       {isMobile && (
         <a
           href={DOWNLOAD_DESKTOP_URL}
@@ -118,14 +128,8 @@ export function LoginForm({
           className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors pt-2"
         >
           <Monitor className="h-4 w-4" />
-          <span>Baixar versão para computador</span>
+          <span>Usar no computador? Baixe aqui</span>
         </a>
-      )}
-
-      {isMobile && (
-        <p className="text-xs text-center text-muted-foreground">
-          Instale no computador e use o mesmo e-mail
-        </p>
       )}
     </form>
   );

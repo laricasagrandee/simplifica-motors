@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 import { supabase } from "@/integrations/supabase/client";
 
 import LoginPage from "./pages/LoginPage";
+import CriarContaPage from "./pages/CriarContaPage";
 import VeiculosPage from "./pages/VeiculosPage";
 import RecuperarSenhaPage from "./pages/RecuperarSenhaPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -125,6 +126,7 @@ const App = () => (
         <RoutePersistence />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/criar-conta" element={<CriarContaPage />} />
           <Route path="/recuperar-senha" element={<RecuperarSenhaPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/escolha-modo" element={<EscolhaModoPage />} />
