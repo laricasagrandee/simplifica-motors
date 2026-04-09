@@ -53,9 +53,10 @@ export async function requestStartServer(): Promise<LocalServerInfo> {
   }
 
   try {
-    // Tauri command: start_local_server (definido no Rust)
-    const { invoke } = await import('@tauri-apps/api/core');
-    const result = await invoke<{ ok: boolean; error?: string }>('start_local_server');
+    // Dynamic import — only resolves inside Tauri runtime
+    const invoke = (window as any).__TAURI_INTERNALS__?.invoke;
+    if (!invoke) throw new Error('Tauri invoke not available');
+    const result = await invoke('start_local_server') as { ok: boolean; error?: string };
     return {
       status: result?.ok ? 'running' : 'error',
       port: getLocalServerPort(),
@@ -80,8 +81,8 @@ export async function requestStartServer(): Promise<LocalServerInfo> {
 export async function requestStopServer(): Promise<void> {
   if (!isTauri()) return;
   try {
-    const { invoke } = await import('@tauri-apps/api/core');
-    await invoke('stop_local_server');
+    const invoke = (window as any).__TAURI_INTERNALS__?.invoke;
+    if (invoke) await invoke('stop_local_server');
   } catch {
     // Silently ignore if command not available
   }
