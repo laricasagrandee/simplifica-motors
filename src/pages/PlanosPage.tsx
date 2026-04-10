@@ -10,7 +10,7 @@ export default function PlanosPage() {
 
   return (
     <AppLayout>
-      <PageHeader titulo="Planos" subtitulo="Escolha o melhor plano para sua oficina" />
+      <PageHeader titulo="Plano" subtitulo="Gerencie sua assinatura" />
       <PlanosComparativo planoAtual={normalizarPlano(plano.data?.plano)} />
       <PlanosFAQ />
     </AppLayout>
