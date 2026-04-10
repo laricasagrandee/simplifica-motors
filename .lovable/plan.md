@@ -1,34 +1,26 @@
 
 
-## Plan: Optimize App Loading Performance
+## Plan: Fix Logout Not Working
 
-### Problem
-The app is very slow to load because **all 20+ pages are eagerly imported** at the top of `App.tsx`. Every page and its dependencies (charts, forms, tables, heavy libraries) are bundled into one massive chunk that must be downloaded and parsed before anything renders.
+### Root Cause
+The logout button triggers `supabase.auth.signOut()`, which fires `onAuthStateChange` with `SIGNED_OUT`. The AuthProvider then sets `usuario = null`, which causes it to return `null` (line 114), unmounting everything. The navigation to `/login` from multiple places creates a race condition where none of them reliably complete.
 
-Additionally, the `LoginForm` component calls `useAppSetting` which queries the `app_settings` table on every login page load -- this adds an unnecessary network request before the login form can render.
+### Fix (2 files)
 
-### Solution: Lazy-load all pages
+**1. `src/hooks/useAuth.ts` — Simplify `useLogout`**
+- Remove `navigate('/login')` from useLogout — let AuthProvider handle navigation
+- Remove `useNavigate` dependency (avoids unmounted component navigation)
+- Just call `signOut()` and `queryClient.clear()`
 
-Convert all page imports in `App.tsx` from static imports to `React.lazy()` with `Suspense`. This splits the bundle so only the code for the current page is loaded.
+**2. `src/components/layout/AuthProvider.tsx` — Reliable logout redirect**
+- Replace `navigate('/login')` on SIGNED_OUT with `window.location.href = '/login'` — this is a hard redirect that bypasses React Router entirely and guarantees the page loads fresh
+- Remove the second `useEffect` that redundantly navigates on `!usuario` (it's handled by onAuthStateChange)
 
-### Changes
+### Why this works
+- `window.location.href` is a full page reload — no React state issues, no unmounted components, no race conditions
+- The query cache gets cleared naturally on page reload
+- Only one place handles the redirect (AuthProvider's onAuthStateChange)
 
-**1. `src/App.tsx`** -- Replace all 20+ static page imports with `React.lazy()`
-- Wrap the Routes inside `<Suspense fallback={<LoadingScreen />}>`
-- Each page becomes: `const DashboardPage = lazy(() => import('./pages/DashboardPage'))`
-- Add a simple loading spinner as fallback
-- Keep `LoginPage` and `NotFound` as eager imports (they're small and critical path)
-
-**2. `src/components/auth/LoginForm.tsx`** -- Remove `useAppSetting` call
-- The `download_desktop_url` setting triggers a Supabase query on every login page load
-- Hardcode the URL or remove the download link entirely (it's a minor UI element causing a blocking query)
-
-### What this fixes
-- **Login page**: Loads only login code (~50KB) instead of the entire app (~500KB+)
-- **Dashboard**: Only fetches dashboard-specific code after authentication
-- **Every page**: Loads on-demand, drastically reducing initial bundle size
-- **No visual changes**: Same UI, same responsiveness, just faster loading
-
-### Technical detail
-React.lazy + dynamic `import()` tells Vite to create separate chunks per page. The browser only downloads the chunk when the user navigates to that route. Combined with the existing `staleTime` caching on queries, subsequent navigations will feel instant.
+### No visual changes
+Same UI, same responsiveness. Just a reliable logout.
 
