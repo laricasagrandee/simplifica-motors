@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Link } from 'react-router-dom';
-import { useAppSetting } from '@/modules/license/services/useAppSettings';
+
 
 interface LoginFormProps {
   email: string;
@@ -24,7 +24,7 @@ export function LoginForm({
 }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  const { value: downloadUrl } = useAppSetting('download_desktop_url', 'https://drive.google.com/drive/folders/PLACEHOLDER');
+  const downloadUrl = 'https://drive.google.com/drive/folders/PLACEHOLDER';
 
   useEffect(() => {
     if (!lockedUntil) { setCountdown(0); return; }
