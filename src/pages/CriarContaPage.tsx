@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { User, Mail, Lock, Eye, EyeOff, Loader2, CheckCircle, ArrowLeft, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,10 @@ import { getDeviceFingerprint } from '@/modules/license/services/deviceFingerpri
 import { detectDeviceType } from '@/modules/device';
 
 export default function CriarContaPage() {
+  const [searchParams] = useSearchParams();
+  const planoParam = searchParams.get('plano');
+  const intervaloParam = searchParams.get('intervalo');
+
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -67,7 +71,7 @@ export default function CriarContaPage() {
           <span className="font-display font-extrabold text-2xl text-primary">Motors</span>
         </div>
         <p className="text-center text-sm text-muted-foreground mb-6">
-          30 dias grátis • Sem compromisso
+          {planoParam ? `Plano selecionado: ${planoParam.charAt(0).toUpperCase() + planoParam.slice(1)} (${intervaloParam || 'mensal'})` : '30 dias grátis • Sem compromisso'}
         </p>
 
         <div className="bg-card rounded-2xl shadow-lg p-8 border border-border">
@@ -81,6 +85,11 @@ export default function CriarContaPage() {
                 Enviamos um e-mail de confirmação para <strong className="text-foreground">{email}</strong>.
                 <br />Verifique sua caixa de entrada e clique no link para ativar.
               </p>
+              {planoParam && (
+                <p className="text-sm text-muted-foreground">
+                  Após confirmar seu e-mail, faça login e acesse a página de <strong>Planos</strong> para ativar sua assinatura.
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
                 Não recebeu? Verifique a pasta de spam.
               </p>
