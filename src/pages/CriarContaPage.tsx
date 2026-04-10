@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { User, Mail, Lock, Eye, EyeOff, Loader2, CheckCircle, ArrowLeft, Monitor } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, Loader2, CheckCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeEmail, sanitizeInput } from '@/lib/sanitize';
 import { useAppSetting } from '@/modules/license/services/useAppSettings';
-import { getDeviceFingerprint } from '@/modules/license/services/deviceFingerprintService';
-import { detectDeviceType } from '@/modules/device';
 
 export default function CriarContaPage() {
   const [searchParams] = useSearchParams();
@@ -23,7 +21,6 @@ export default function CriarContaPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const { value: downloadUrl } = useAppSetting('download_desktop_url', 'https://drive.google.com/drive/folders/PLACEHOLDER');
-  const deviceType = detectDeviceType();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,9 +44,8 @@ export default function CriarContaPage() {
 
     setLoading(true);
     try {
-      const fingerprint = await getDeviceFingerprint();
       const { data, error: fnError } = await supabase.functions.invoke('public-signup', {
-        body: { nome: cleanNome, email: cleanEmail, password: senha, fingerprint, device_type: deviceType },
+        body: { nome: cleanNome, email: cleanEmail, password: senha },
       });
 
       if (fnError) throw new Error(fnError.message || 'Erro ao criar conta');
@@ -185,15 +181,6 @@ export default function CriarContaPage() {
                 </Link>
               </div>
 
-              <a
-                href={downloadUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mt-4"
-              >
-                <Monitor className="h-4 w-4" />
-                <span>Baixe a versão para computador</span>
-              </a>
             </>
           )}
         </div>
