@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 import LoginPage from "./pages/LoginPage";
 import CriarContaPage from "./pages/CriarContaPage";
+import VendasPage from "./pages/VendasPage";
 import VeiculosPage from "./pages/VeiculosPage";
 import RecuperarSenhaPage from "./pages/RecuperarSenhaPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -125,6 +126,7 @@ const App = () => (
       <BrowserRouter>
         <RoutePersistence />
         <Routes>
+          <Route path="/vendas" element={<VendasPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/criar-conta" element={<CriarContaPage />} />
           <Route path="/recuperar-senha" element={<RecuperarSenhaPage />} />
