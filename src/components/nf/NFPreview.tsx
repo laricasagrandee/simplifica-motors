@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Printer, FileDown, MessageCircle } from 'lucide-react';
+import { Printer, FileDown, MessageCircle, ArrowLeft } from 'lucide-react';
 import { formatarMoeda } from '@/lib/formatters';
 import { gerarPdfNF } from '@/lib/gerarPdfOS';
 import { gerarPdfCupom } from '@/lib/gerarPdfCupom';
@@ -12,7 +12,6 @@ import { NFPreviewTotais } from './NFPreviewTotais';
 import { NFPreviewRodape } from './NFPreviewRodape';
 import { NFCupomPreview } from './NFCupomPreview';
 import { PrintFormatDialog } from './PrintFormatDialog';
-import { useConfiguracoes, useAtualizarConfiguracoes } from '@/hooks/useConfiguracoes';
 import type { NotaFiscalCompleta } from '@/hooks/useNFCompleta';
 
 interface Props {
@@ -25,14 +24,10 @@ export function NFPreview({ nf }: Props) {
     `Olá! Segue seu Comprovante nº ${nf.numero} no valor de ${formatarMoeda(nf.valor)}. Facilita Motors.`
   );
 
-  const config = useConfiguracoes();
-  const atualizar = useAtualizarConfiguracoes();
   const [formatDialogOpen, setFormatDialogOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<'print' | 'pdf' | null>(null);
-  const [cupomMode, setCupomMode] = useState(false);
+  const [chosenFormat, setChosenFormat] = useState<'a4' | 'cupom' | null>(null);
   const cupomRef = useRef<HTMLDivElement>(null);
-
-  const savedFormat = config.data?.formato_impressao as 'a4' | 'cupom' | null;
 
   const executeAction = (formato: 'a4' | 'cupom', action: 'print' | 'pdf') => {
     if (action === 'pdf') {
@@ -50,93 +45,112 @@ export function NFPreview({ nf }: Props) {
       }
     } else {
       if (formato === 'cupom') {
-        setCupomMode(true);
         setTimeout(() => {
           window.print();
-          setCupomMode(false);
         }, 300);
       } else {
         window.print();
       }
     }
+    // Reset after action
+    setChosenFormat(null);
+    setPendingAction(null);
   };
 
   const handleAction = (action: 'print' | 'pdf') => {
-    if (savedFormat) {
-      executeAction(savedFormat, action);
-    } else {
-      setPendingAction(action);
-      setFormatDialogOpen(true);
+    setPendingAction(action);
+    setFormatDialogOpen(true);
+  };
+
+  const handleFormatSelect = (formato: 'a4' | 'cupom') => {
+    setFormatDialogOpen(false);
+    setChosenFormat(formato);
+  };
+
+  const handleConfirm = () => {
+    if (chosenFormat && pendingAction) {
+      executeAction(chosenFormat, pendingAction);
     }
   };
 
-  const handleFormatSelect = (formato: 'a4' | 'cupom', salvar: boolean) => {
-    setFormatDialogOpen(false);
-    if (salvar && config.data) {
-      atualizar.mutate({ id: config.data.id, formato_impressao: formato } as any);
-    }
-    if (pendingAction) {
-      executeAction(formato, pendingAction);
-      setPendingAction(null);
-    }
+  const handleVoltar = () => {
+    setChosenFormat(null);
+    setPendingAction(null);
   };
+
+  const showPreviewStep = chosenFormat !== null && pendingAction !== null;
 
   return (
     <div className="max-w-[210mm] mx-auto">
-      {/* A4 document body - hidden when printing in cupom mode */}
-      <div className={`bg-background border border-border rounded-lg shadow-sm p-6 sm:p-8 print:shadow-none print:border-none print:p-4 ${cupomMode ? 'print:hidden' : ''}`}>
-        <NFPreviewHeader
-          config={nf.config}
-          numero={nf.numero}
-          tipo={nf.tipo}
-          serie={nf.serie}
-          emitidaEm={nf.emitida_em}
-        />
+      {/* Preview content */}
+      {(!showPreviewStep || chosenFormat === 'a4') && (
+        <div className={`bg-background border border-border rounded-lg shadow-sm p-6 sm:p-8 print:shadow-none print:border-none print:p-4 ${showPreviewStep && chosenFormat === 'a4' ? '' : ''}`}>
+          <NFPreviewHeader
+            config={nf.config}
+            numero={nf.numero}
+            tipo={nf.tipo}
+            serie={nf.serie}
+            emitidaEm={nf.emitida_em}
+          />
+          <NFPreviewDestinatario
+            nome={nf.destinatario_nome}
+            cpfCnpj={nf.destinatario_cpf_cnpj}
+            telefone={nf.destinatario_telefone}
+            email={nf.destinatario_email}
+            veiculo={nf.veiculo}
+            osNumero={nf.os_numero}
+          />
+          <NFPreviewItens itens={nf.itens} />
+          <NFPreviewTotais
+            itens={nf.itens}
+            desconto={nf.desconto}
+            valorTotal={nf.valor}
+            aliquota={nf.aliquota}
+          />
+          <NFPreviewRodape nfId={nf.id} emitidaEm={nf.emitida_em} />
+        </div>
+      )}
 
-        <NFPreviewDestinatario
-          nome={nf.destinatario_nome}
-          cpfCnpj={nf.destinatario_cpf_cnpj}
-          telefone={nf.destinatario_telefone}
-          email={nf.destinatario_email}
-          veiculo={nf.veiculo}
-          osNumero={nf.os_numero}
-        />
-
-        <NFPreviewItens itens={nf.itens} />
-
-        <NFPreviewTotais
-          itens={nf.itens}
-          desconto={nf.desconto}
-          valorTotal={nf.valor}
-          aliquota={nf.aliquota}
-        />
-
-        <NFPreviewRodape nfId={nf.id} emitidaEm={nf.emitida_em} />
-      </div>
-
-      {/* Cupom layout - only visible when printing in cupom mode */}
-      {cupomMode && (
-        <div ref={cupomRef} className="hidden print:block">
+      {showPreviewStep && chosenFormat === 'cupom' && (
+        <div ref={cupomRef} className="bg-background border border-border rounded-lg shadow-sm p-6 sm:p-8">
           <NFCupomPreview nf={nf} />
         </div>
       )}
 
-      {/* Actions */}
-      <div className="flex gap-2 mt-4 print:hidden">
-        <Button variant="outline" className="flex-1 min-h-[44px]" onClick={() => handleAction('pdf')}>
-          <FileDown className="h-4 w-4 mr-2" />PDF
-        </Button>
-        <Button variant="outline" className="flex-1 min-h-[44px]" onClick={() => handleAction('print')}>
-          <Printer className="h-4 w-4 mr-2" />Imprimir
-        </Button>
-        {tel && (
-          <Button variant="outline" className="flex-1 min-h-[44px]" asChild>
-            <a href={`https://wa.me/55${tel}?text=${msg}`} target="_blank" rel="noreferrer">
-              <MessageCircle className="h-4 w-4 mr-2" />WhatsApp
-            </a>
+      {/* Action buttons */}
+      {!showPreviewStep && (
+        <div className="flex gap-2 mt-4 print:hidden">
+          <Button variant="outline" className="flex-1 min-h-[44px]" onClick={() => handleAction('pdf')}>
+            <FileDown className="h-4 w-4 mr-2" />PDF
           </Button>
-        )}
-      </div>
+          <Button variant="outline" className="flex-1 min-h-[44px]" onClick={() => handleAction('print')}>
+            <Printer className="h-4 w-4 mr-2" />Imprimir
+          </Button>
+          {tel && (
+            <Button variant="outline" className="flex-1 min-h-[44px]" asChild>
+              <a href={`https://wa.me/55${tel}?text=${msg}`} target="_blank" rel="noreferrer">
+                <MessageCircle className="h-4 w-4 mr-2" />WhatsApp
+              </a>
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Confirmation bar after choosing format */}
+      {showPreviewStep && (
+        <div className="flex gap-2 mt-4 print:hidden">
+          <Button variant="outline" className="min-h-[44px]" onClick={handleVoltar}>
+            <ArrowLeft className="h-4 w-4 mr-2" />Voltar
+          </Button>
+          <Button className="flex-1 min-h-[44px] bg-accent text-accent-foreground" onClick={handleConfirm}>
+            {pendingAction === 'pdf' ? (
+              <><FileDown className="h-4 w-4 mr-2" />Confirmar PDF</>
+            ) : (
+              <><Printer className="h-4 w-4 mr-2" />Confirmar Impressão</>
+            )}
+          </Button>
+        </div>
+      )}
 
       <PrintFormatDialog
         open={formatDialogOpen}
