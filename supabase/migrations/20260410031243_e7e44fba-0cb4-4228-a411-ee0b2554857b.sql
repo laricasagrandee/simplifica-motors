@@ -1,0 +1,1 @@
+DELETE FROM device_fingerprints WHERE email = 'ptairone@hotmail.com';
