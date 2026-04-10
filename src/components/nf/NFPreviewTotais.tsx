@@ -9,11 +9,9 @@ interface Props {
   aliquota: number;
 }
 
-export function NFPreviewTotais({ itens, desconto, valorTotal, aliquota }: Props) {
+export function NFPreviewTotais({ itens, desconto, valorTotal }: Props) {
   const subtotalServicos = itens.filter(i => i.tipo === 'servico').reduce((s, i) => s + i.valor_total, 0);
   const subtotalPecas = itens.filter(i => i.tipo === 'peca').reduce((s, i) => s + i.valor_total, 0);
-  const baseCalculo = subtotalServicos + subtotalPecas - desconto;
-  const valorImposto = baseCalculo * (aliquota / 100);
 
   return (
     <div className="mb-4">
@@ -26,14 +24,6 @@ export function NFPreviewTotais({ itens, desconto, valorTotal, aliquota }: Props
         )}
         {desconto > 0 && (
           <Row label="Desconto" valor={-desconto} negative />
-        )}
-        <div className="border-t border-border pt-1">
-          <Row label="Base de Cálculo" valor={baseCalculo} />
-        </div>
-        {aliquota > 0 && (
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">{`Impostos estimados (${aliquota}%) — já inclusos no valor`}</span>
-          </div>
         )}
         <div className="rounded-md border-2 border-foreground/20 p-2.5 flex justify-between items-center mt-2">
           <span className="font-semibold text-xs text-foreground">VALOR TOTAL</span>
