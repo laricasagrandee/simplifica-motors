@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom';
 import {
   Wrench, ShoppingCart, DollarSign, BarChart3, Package, CalendarDays,
   CheckCircle, Star, ChevronDown, ChevronUp, ArrowRight, Users, Shield, Zap,
-  Clock, FileText, Monitor
+  Clock, FileText, Monitor, Smartphone, Laptop
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { usePlanoPrecos, type PlanoPreco } from '@/hooks/useStripe';
+import { usePlanoPrecos } from '@/hooks/useStripe';
 import { useAppSetting } from '@/modules/license/services/useAppSettings';
 
 const BENEFICIOS = [
@@ -23,7 +23,7 @@ const DIFERENCIAIS = [
   { icon: Zap, texto: 'Setup em 2 minutos' },
   { icon: Shield, texto: 'Dados seguros na nuvem' },
   { icon: Clock, texto: 'Suporte via WhatsApp' },
-  { icon: Users, texto: 'Multi-usuário com permissões' },
+  { icon: Users, texto: 'Funcionários ilimitados' },
   { icon: FileText, texto: 'Emissão de NF simplificada' },
   { icon: Monitor, texto: 'Versão desktop disponível' },
 ];
@@ -36,45 +36,54 @@ const DEPOIMENTOS = [
 
 const FAQ = [
   { q: 'Posso testar antes de pagar?', a: 'Sim! Você tem 30 dias grátis com acesso completo. Sem cartão de crédito.' },
-  { q: 'Posso trocar de plano a qualquer momento?', a: 'Sim! Faça upgrade ou downgrade quando quiser. A mudança é imediata.' },
+  { q: 'Quantos funcionários posso cadastrar?', a: 'Ilimitados! Não há limite de funcionários em nenhum plano.' },
   { q: 'O que acontece quando meu plano vence?', a: 'Você tem 15 dias de tolerância. Após esse período, o acesso fica em modo somente leitura.' },
   { q: 'Posso cancelar minha assinatura?', a: 'Sim. Entre em contato via WhatsApp. Seus dados ficam armazenados por 90 dias.' },
-  { q: 'Existe desconto para pagamento anual?', a: 'Sim! Planos anuais têm desconto de até 20%.' },
-  { q: 'Como funciona o suporte?', a: 'Todos os planos têm suporte via WhatsApp. Planos Premium têm resposta prioritária em até 2 horas.' },
+  { q: 'Existe desconto para pagamento anual?', a: 'Sim! O plano anual sai por R$ 209,90 — economia de mais de R$ 28 por ano.' },
+  { q: 'Em quais dispositivos funciona?', a: 'Web (navegador), aplicativo desktop (Windows/Mac) e celular (PWA).' },
+  { q: 'Como funciona o suporte?', a: 'Suporte via WhatsApp com resposta rápida para todos os assinantes.' },
 ];
 
 function formatarPreco(centavos: number) {
   return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-const PLANO_INFO: Record<string, { label: string; destaque?: boolean; features: string[] }> = {
-  basico: {
-    label: 'Básico',
-    features: ['Até 2 funcionários', 'OS ilimitadas', 'PDV integrado', 'Financeiro básico', 'Suporte WhatsApp'],
-  },
-  profissional: {
-    label: 'Profissional',
-    destaque: true,
-    features: ['Até 5 funcionários', 'Tudo do Básico', 'Relatórios avançados', 'CMV e DRE', 'Agendamentos', 'Emissão de NF'],
-  },
-  premium: {
-    label: 'Premium',
-    features: ['Funcionários ilimitados', 'Tudo do Profissional', 'Suporte prioritário', 'API e integrações', 'Multi-filial'],
-  },
-};
+const FEATURES_COMPLETO = [
+  'Funcionários ilimitados',
+  'OS ilimitadas',
+  'PDV integrado',
+  'Financeiro completo (DRE, CMV)',
+  'Relatórios avançados',
+  'Agendamentos',
+  'Emissão de NF',
+  'Estoque com QR Code',
+  'Suporte via WhatsApp',
+  'Acesso Web + Desktop + Mobile',
+];
 
-function PlanosSection({ precos }: { precos: PlanoPreco[] }) {
+function PlanosSection() {
+  const { data: precos } = usePlanoPrecos();
   const [intervalo, setIntervalo] = useState<'mensal' | 'anual'>('mensal');
 
-  const filtrados = precos.filter((p) => p.intervalo === intervalo && PLANO_INFO[p.slug]);
+  const preco = precos?.find((p) => p.slug === 'completo' && p.intervalo === intervalo);
+  const precoMensal = precos?.find((p) => p.slug === 'completo' && p.intervalo === 'mensal');
+  const precoAnual = precos?.find((p) => p.slug === 'completo' && p.intervalo === 'anual');
+
+  if (!preco) return null;
+
+  const economiaAnual = precoMensal && precoAnual
+    ? (precoMensal.valor_centavos * 12) - precoAnual.valor_centavos
+    : 0;
 
   return (
     <section id="planos" className="py-20 px-6 bg-background">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         <h2 className="text-3xl md:text-4xl font-extrabold text-center text-foreground mb-2">
-          Planos e Preços
+          Plano Único, Tudo Incluso
         </h2>
-        <p className="text-center text-muted-foreground mb-8">Escolha o plano ideal para sua oficina</p>
+        <p className="text-center text-muted-foreground mb-8">
+          Sem surpresas. Um preço justo com acesso completo.
+        </p>
 
         <div className="flex justify-center mb-10">
           <div className="inline-flex rounded-full border border-border bg-card p-1">
@@ -92,51 +101,52 @@ function PlanosSection({ precos }: { precos: PlanoPreco[] }) {
                 intervalo === 'anual' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Anual <span className="text-xs opacity-75">(-20%)</span>
+              Anual {economiaAnual > 0 && <span className="text-xs opacity-75">(economize {formatarPreco(economiaAnual)})</span>}
             </button>
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {filtrados.map((p) => {
-            const info = PLANO_INFO[p.slug];
-            if (!info) return null;
-            return (
-              <Card
-                key={p.id}
-                className={`relative overflow-hidden transition-shadow ${
-                  info.destaque ? 'ring-2 ring-primary shadow-lg scale-[1.02]' : ''
-                }`}
-              >
-                {info.destaque && (
-                  <div className="absolute top-0 left-0 right-0 bg-primary text-primary-foreground text-xs font-bold text-center py-1.5">
-                    MAIS POPULAR
-                  </div>
-                )}
-                <CardContent className={`p-6 ${info.destaque ? 'pt-10' : ''}`}>
-                  <h3 className="font-bold text-lg text-foreground mb-1">{info.label}</h3>
-                  <div className="mb-4">
-                    <span className="text-3xl font-extrabold text-foreground">{formatarPreco(p.valor_centavos)}</span>
-                    <span className="text-muted-foreground text-sm">/{intervalo === 'mensal' ? 'mês' : 'ano'}</span>
-                  </div>
-                  <ul className="space-y-2 mb-6">
-                    {info.features.map((f) => (
-                      <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <CheckCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <Link to={`/criar-conta?plano=${p.slug}&intervalo=${intervalo}`}>
-                    <Button className="w-full" variant={info.destaque ? 'default' : 'outline'}>
-                      Começar agora
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        <Card className="ring-2 ring-primary shadow-lg">
+          <CardContent className="p-8">
+            <div className="text-center mb-6">
+              <h3 className="font-bold text-xl text-foreground mb-1">Plano Completo</h3>
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <Laptop className="h-5 w-5 text-muted-foreground" />
+                <Monitor className="h-5 w-5 text-muted-foreground" />
+                <Smartphone className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <p className="text-xs text-muted-foreground">Web • Desktop • Mobile</p>
+            </div>
+
+            <div className="text-center mb-6">
+              <span className="text-4xl font-extrabold text-foreground">{formatarPreco(preco.valor_centavos)}</span>
+              <span className="text-muted-foreground text-sm">/{intervalo === 'mensal' ? 'mês' : 'ano'}</span>
+              {intervalo === 'anual' && precoMensal && (
+                <p className="text-xs text-primary mt-1">
+                  equivale a {formatarPreco(Math.round(preco.valor_centavos / 12))}/mês
+                </p>
+              )}
+            </div>
+
+            <ul className="space-y-2.5 mb-8">
+              {FEATURES_COMPLETO.map((f) => (
+                <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  {f}
+                </li>
+              ))}
+            </ul>
+
+            <Link to={`/criar-conta?plano=completo&intervalo=${intervalo}`}>
+              <Button className="w-full" size="lg">
+                Começar 30 dias grátis <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </Link>
+            <p className="text-xs text-center text-muted-foreground mt-3">
+              Sem cartão de crédito. Cancele quando quiser.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     </section>
   );
@@ -170,7 +180,6 @@ function FAQSection() {
 }
 
 export default function VendasPage() {
-  const { data: precos, isLoading } = usePlanoPrecos();
   const { value: downloadUrl } = useAppSetting('download_desktop_url', '#');
 
   return (
@@ -184,7 +193,7 @@ export default function VendasPage() {
           </div>
           <div className="flex items-center gap-3">
             <a href="#planos" className="text-sm text-muted-foreground hover:text-foreground hidden sm:inline">
-              Planos
+              Preços
             </a>
             <Link to="/login">
               <Button variant="ghost" size="sm">Entrar</Button>
@@ -205,8 +214,11 @@ export default function VendasPage() {
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-foreground leading-tight mb-6">
             Sua oficina na palma da mão
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-muted-foreground mb-4 max-w-2xl mx-auto">
             Sistema completo para oficinas mecânicas. Ordens de serviço, estoque, financeiro e muito mais — tudo integrado.
+          </p>
+          <p className="text-2xl font-bold text-primary mb-8">
+            A partir de R$ 19,90/mês
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link to="/criar-conta">
@@ -216,7 +228,7 @@ export default function VendasPage() {
             </Link>
             <a href="#planos">
               <Button variant="outline" size="lg" className="text-base px-8 h-12">
-                Ver planos
+                Ver preço
               </Button>
             </a>
           </div>
@@ -261,7 +273,7 @@ export default function VendasPage() {
       </section>
 
       {/* Planos */}
-      {!isLoading && precos && precos.length > 0 && <PlanosSection precos={precos} />}
+      <PlanosSection />
 
       {/* Depoimentos */}
       <section className="py-20 px-6">

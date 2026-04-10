@@ -1,4 +1,4 @@
-export const PLANOS_VALIDOS = ['teste', 'basico', 'profissional', 'premium', 'enterprise'] as const;
+export const PLANOS_VALIDOS = ['teste', 'completo', 'basico', 'profissional', 'premium', 'enterprise'] as const;
 
 export type PlanoSlug = (typeof PLANOS_VALIDOS)[number];
 
@@ -7,6 +7,7 @@ export const PLANO_FALLBACK_UI: PlanoSlug = 'teste';
 
 export const PLANO_LABELS: Record<PlanoSlug, string> = {
   teste: 'Teste',
+  completo: 'Plano Completo',
   basico: 'Básico',
   profissional: 'Profissional',
   premium: 'Premium',

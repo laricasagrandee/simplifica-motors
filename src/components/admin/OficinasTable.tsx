@@ -36,6 +36,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 
 const planoConfig: Record<PlanoSlug, { label: string; cls: string }> = {
   teste: { label: 'Teste', cls: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+  completo: { label: 'Completo', cls: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
   basico: { label: 'Básico', cls: 'bg-slate-500/20 text-slate-300 border-slate-500/30' },
   profissional: { label: 'Profissional', cls: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
   premium: { label: 'Premium', cls: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },

@@ -77,7 +77,7 @@ export function AdminConfigPrecos() {
 
   if (isLoading) return <Loader2 className="h-5 w-5 animate-spin text-blue-400 mx-auto" />;
 
-  const slugOrder: PlanoSlug[] = ['basico', 'profissional', 'premium'];
+  const slugOrder: PlanoSlug[] = ['completo', 'basico', 'profissional', 'premium'];
   const grouped = (precos || []).reduce((acc, p) => {
     if (!acc[p.slug]) acc[p.slug] = {};
     acc[p.slug][p.intervalo] = p;
