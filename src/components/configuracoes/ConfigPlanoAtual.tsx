@@ -5,6 +5,8 @@ import { Progress } from '@/components/ui/progress';
 import { formatarDataCurta } from '@/lib/formatters';
 import { PLANO_LABELS, normalizarPlano } from '@/lib/planos';
 import { useNavigate } from 'react-router-dom';
+import { useCustomerPortal } from '@/hooks/useStripe';
+import { CreditCard, Loader2 } from 'lucide-react';
 
 interface Props {
   plano: string;
@@ -16,8 +18,10 @@ interface Props {
 
 export function ConfigPlanoAtual({ plano, planoAtivo, vencimento, maxFuncionarios, funcionariosAtivos }: Props) {
   const navigate = useNavigate();
+  const portal = useCustomerPortal();
   const pct = maxFuncionarios > 0 ? (funcionariosAtivos / maxFuncionarios) * 100 : 0;
   const planoNormalizado = normalizarPlano(plano);
+  const isTeste = planoNormalizado === 'teste';
 
   return (
     <Card>
@@ -34,7 +38,22 @@ export function ConfigPlanoAtual({ plano, planoAtivo, vencimento, maxFuncionario
           <Progress value={pct} className="h-2" />
         </div>
         {vencimento && <p className="text-xs text-muted-foreground">Vencimento: {formatarDataCurta(vencimento)}</p>}
-        <Button variant="outline" onClick={() => navigate('/planos')} className="min-h-[44px]">Mudar Plano</Button>
+        
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate('/planos')} className="min-h-[44px] flex-1">
+            {isTeste ? 'Escolher Plano' : 'Mudar Plano'}
+          </Button>
+          {!isTeste && (
+            <Button
+              variant="ghost"
+              onClick={() => portal.mutate()}
+              disabled={portal.isPending}
+              className="min-h-[44px]"
+            >
+              {portal.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
