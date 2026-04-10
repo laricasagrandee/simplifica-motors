@@ -52,7 +52,7 @@ export function NFForm({ open, onClose, onEmitir, clientes, osDraft }: Props) {
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
       <DialogContent className="sm:max-w-lg">
-        <DialogHeader><DialogTitle>Emitir Nota Fiscal</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Emitir Comprovante</DialogTitle></DialogHeader>
         <div className="space-y-4">
           {osDraft && (
             <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm space-y-1">
@@ -68,7 +68,7 @@ export function NFForm({ open, onClose, onEmitir, clientes, osDraft }: Props) {
                 className={cn('flex-1 flex items-center justify-center gap-2 rounded-lg border-2 p-3 text-sm font-medium transition-all cursor-pointer',
                   tipo === t ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/40')}>
                 {t === 'servico' ? <FileText className="h-4 w-4" /> : <Package className="h-4 w-4" />}
-                {t === 'servico' ? 'Serviço (NFS-e)' : 'Produto (NF-e)'}
+                {t === 'servico' ? 'Serviço' : 'Produto'}
               </button>
             ))}
           </div>
@@ -87,7 +87,7 @@ export function NFForm({ open, onClose, onEmitir, clientes, osDraft }: Props) {
           </div>
 
           <Button onClick={handleEmitir} className="w-full min-h-[48px] bg-success hover:bg-success/90 text-success-foreground text-base font-bold" disabled={!clienteId || !valor}>
-            ✅ Emitir Nota Fiscal
+            ✅ Gerar Comprovante
           </Button>
         </div>
       </DialogContent>

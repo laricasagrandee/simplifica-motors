@@ -31,7 +31,9 @@ export function NFPreviewTotais({ itens, desconto, valorTotal, aliquota }: Props
           <Row label="Base de Cálculo" valor={baseCalculo} />
         </div>
         {aliquota > 0 && (
-          <Row label={`Impostos (${aliquota}%)`} valor={valorImposto} muted />
+          <div className="flex justify-between text-xs">
+            <span className="text-muted-foreground">{`Impostos estimados (${aliquota}%) — já inclusos no valor`}</span>
+          </div>
         )}
         <div className="rounded-md border-2 border-foreground/20 p-2.5 flex justify-between items-center mt-2">
           <span className="font-semibold text-xs text-foreground">VALOR TOTAL</span>
