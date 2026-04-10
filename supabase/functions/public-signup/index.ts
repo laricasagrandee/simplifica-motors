@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { email, password, nome, fingerprint, device_type } = body;
+    const { email, password, nome } = body;
 
     if (!email || !password || !nome) {
       return new Response(
@@ -44,8 +44,6 @@ Deno.serve(async (req) => {
 
     const cleanEmail = email.replace(/[^a-zA-Z0-9@._+-]/g, "").trim().toLowerCase();
     const cleanNome = nome.trim().slice(0, 200);
-    const cleanFingerprint = typeof fingerprint === "string" ? fingerprint.slice(0, 128) : null;
-    const cleanDeviceType = typeof device_type === "string" ? device_type.slice(0, 20) : "unknown";
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -89,36 +87,6 @@ Deno.serve(async (req) => {
       await adminClient.from("device_fingerprints").delete().eq("id", trialRecord.id);
     }
 
-    // Check if device fingerprint already used a trial
-    if (cleanFingerprint) {
-      const { data: fpTrials } = await adminClient
-        .from("device_fingerprints")
-        .select("id, tenant_id")
-        .eq("fingerprint", cleanFingerprint)
-        .not("trial_started_at", "is", null)
-        .limit(1);
-
-      if (fpTrials && fpTrials.length > 0) {
-        const fpRecord = fpTrials[0];
-        let fpTenantExists = false;
-        if (fpRecord.tenant_id) {
-          const { data: tenant } = await adminClient
-            .from("configuracoes")
-            .select("id")
-            .eq("id", fpRecord.tenant_id)
-            .maybeSingle();
-          fpTenantExists = !!tenant;
-        }
-        if (fpTenantExists) {
-          return new Response(
-            JSON.stringify({ error: "Este dispositivo já utilizou o período de teste gratuito." }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-          );
-        }
-        // Orphaned — clean up
-        await adminClient.from("device_fingerprints").delete().eq("id", fpRecord.id);
-      }
-    }
 
     // ─── Create user ──────────────────────────────────────────
     const { data: newUser, error: createUserError } = await adminClient.auth.admin.createUser({
@@ -185,17 +153,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ─── Register device fingerprint ──────────────────────────
-    if (cleanFingerprint) {
-      await adminClient.from("device_fingerprints").insert({
-        fingerprint: cleanFingerprint,
-        device_type: cleanDeviceType,
-        email: cleanEmail,
-        tenant_id: config.id,
-        trial_started_at: now.toISOString(),
-        trial_ends_at: vencimento,
-      });
-    }
+    // ─── Register audit record ──────────────────────────
+    await adminClient.from("device_fingerprints").insert({
+      fingerprint: "none",
+      device_type: "unknown",
+      email: cleanEmail,
+      tenant_id: config.id,
+      trial_started_at: now.toISOString(),
+      trial_ends_at: vencimento,
+    });
 
     return new Response(
       JSON.stringify({
