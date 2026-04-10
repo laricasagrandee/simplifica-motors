@@ -19,10 +19,21 @@ export default function NFPage() {
   const osIdParam = searchParams.get('os_id');
   const [formOpen, setFormOpen] = useState(false);
   const [previewId, setPreviewId] = useState('');
+  const [printId, setPrintId] = useState('');
   const nfs = useListarNF();
   const criar = useCriarNF();
   const osDraft = useOSParaNF(osIdParam);
   const nfCompleta = useNFCompleta(previewId);
+
+  useEffect(() => {
+    if (printId && printId === previewId && nfCompleta.data) {
+      const timer = setTimeout(() => {
+        window.print();
+        setPrintId('');
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [printId, previewId, nfCompleta.data]);
 
   useEffect(() => {
     if (osIdParam && osDraft.data) setFormOpen(true);
@@ -52,7 +63,7 @@ export default function NFPage() {
         notas={nfs.data?.notas as unknown as Parameters<typeof NFList>[0]['notas'] || []}
         loading={nfs.isLoading}
         onVer={id => setPreviewId(id)}
-        onImprimir={() => window.print()}
+        onImprimir={id => { setPreviewId(id); setPrintId(id); }}
       />
       <NFForm
         open={formOpen}
