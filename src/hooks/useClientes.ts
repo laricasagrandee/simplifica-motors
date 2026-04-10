@@ -120,13 +120,23 @@ function sanitizeCliente(input: Record<string, string | null>) {
 
 export function useCriarCliente() {
   const qc = useQueryClient();
-  const tenantId = useTenantId();
   return useMutation({
     mutationFn: async (input: Record<string, string | null>) => {
       const clean = sanitizeCliente(input);
-      const { data, error } = await supabase.from('clientes').insert(wt(clean, tenantId)).select().single();
-      if (error) throw error;
-      return data;
+      const url = `http://localhost:3847/api/clientes`;
+      console.log('[CLIENTES] POST Request:', url, clean);
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(clean),
+      });
+      console.log('[CLIENTES] POST Response:', res.status);
+      if (!res.ok) {
+        const err = await res.text();
+        console.error('[CLIENTES] POST Error:', err);
+        throw new Error(err);
+      }
+      return await res.json();
     },
     onSuccess: (data) => {
       registrarLog({ acao: 'criar', tabela: 'clientes', registroId: data.id, dadosDepois: data });
