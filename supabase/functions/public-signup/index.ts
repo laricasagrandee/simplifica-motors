@@ -55,32 +55,68 @@ Deno.serve(async (req) => {
     // Check if email already used a trial
     const { data: emailTrials } = await adminClient
       .from("device_fingerprints")
-      .select("id")
+      .select("id, tenant_id")
       .eq("email", cleanEmail)
       .not("trial_started_at", "is", null)
       .limit(1);
 
     if (emailTrials && emailTrials.length > 0) {
-      return new Response(
-        JSON.stringify({ error: "Este e-mail já utilizou o período de teste gratuito." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      // Check if the tenant still exists (user might have been deleted by admin)
+      const trialRecord = emailTrials[0];
+      let tenantStillExists = false;
+      if (trialRecord.tenant_id) {
+        const { data: tenant } = await adminClient
+          .from("configuracoes")
+          .select("id")
+          .eq("id", trialRecord.tenant_id)
+          .maybeSingle();
+        tenantStillExists = !!tenant;
+      }
+      // Also check if the auth user still exists for this email
+      const { data: existingUsers } = await adminClient.auth.admin.listUsers({ perPage: 1 });
+      const userStillExists = existingUsers?.users?.some(
+        (u: { email?: string }) => u.email?.toLowerCase() === cleanEmail,
       );
+
+      if (tenantStillExists || userStillExists) {
+        return new Response(
+          JSON.stringify({ error: "Este e-mail já utilizou o período de teste gratuito." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      // Orphaned record — clean it up so the user can re-register
+      await adminClient.from("device_fingerprints").delete().eq("id", trialRecord.id);
     }
 
     // Check if device fingerprint already used a trial
     if (cleanFingerprint) {
       const { data: fpTrials } = await adminClient
         .from("device_fingerprints")
-        .select("id")
+        .select("id, tenant_id")
         .eq("fingerprint", cleanFingerprint)
         .not("trial_started_at", "is", null)
         .limit(1);
 
       if (fpTrials && fpTrials.length > 0) {
-        return new Response(
-          JSON.stringify({ error: "Este dispositivo já utilizou o período de teste gratuito." }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
+        const fpRecord = fpTrials[0];
+        let fpTenantExists = false;
+        if (fpRecord.tenant_id) {
+          const { data: tenant } = await adminClient
+            .from("configuracoes")
+            .select("id")
+            .eq("id", fpRecord.tenant_id)
+            .maybeSingle();
+          fpTenantExists = !!tenant;
+        }
+        if (fpTenantExists) {
+          return new Response(
+            JSON.stringify({ error: "Este dispositivo já utilizou o período de teste gratuito." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+        // Orphaned — clean up
+        await adminClient.from("device_fingerprints").delete().eq("id", fpRecord.id);
       }
     }
 
