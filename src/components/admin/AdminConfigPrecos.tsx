@@ -57,9 +57,10 @@ export function AdminConfigPrecos() {
     try {
       for (const [id, changes] of Object.entries(edits)) {
         if (Object.keys(changes).length === 0) continue;
+        const updateData: Record<string, unknown> = { ...changes, atualizado_em: new Date().toISOString() };
         const { error } = await supabase
           .from('plano_precos')
-          .update({ ...changes, atualizado_em: new Date().toISOString() } as Record<string, unknown>)
+          .update(updateData as any)
           .eq('id', id);
         if (error) throw error;
       }
