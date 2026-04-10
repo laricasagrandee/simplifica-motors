@@ -290,6 +290,7 @@ export type Database = {
           dias_tolerancia: number | null
           email: string | null
           endereco_completo: string | null
+          formato_impressao: string | null
           id: string
           ie: string | null
           logo_url: string | null
@@ -314,6 +315,7 @@ export type Database = {
           dias_tolerancia?: number | null
           email?: string | null
           endereco_completo?: string | null
+          formato_impressao?: string | null
           id?: string
           ie?: string | null
           logo_url?: string | null
@@ -338,6 +340,7 @@ export type Database = {
           dias_tolerancia?: number | null
           email?: string | null
           endereco_completo?: string | null
+          formato_impressao?: string | null
           id?: string
           ie?: string | null
           logo_url?: string | null
