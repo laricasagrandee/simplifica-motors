@@ -11,7 +11,7 @@ export function NFPreviewDestinatario({ nome, cpfCnpj, telefone, email, veiculo,
   return (
     <div className="border border-border rounded-lg p-3 mb-4">
       <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider mb-2">
-        DESTINATÁRIO / TOMADOR
+        CLIENTE
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-sm">
         <div>

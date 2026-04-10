@@ -43,9 +43,9 @@ export default function NFPage() {
 
   return (
     <AppLayout>
-      <PageHeader titulo="Notas Fiscais" subtitulo="Emissão e consulta">
+      <PageHeader titulo="Comprovantes" subtitulo="Emissão e consulta">
         <Button onClick={() => setFormOpen(true)} className="bg-accent text-accent-foreground min-h-[44px] gap-2">
-          <Plus className="h-4 w-4" />Emitir NF
+          <Plus className="h-4 w-4" />Novo Comprovante
         </Button>
       </PageHeader>
       <NFList

@@ -267,13 +267,13 @@ export async function gerarPdfNF(nf: NotaFiscalCompleta) {
   if (config.endereco_completo) doc.text(config.endereco_completo.slice(0, 65), hx, y + 23);
 
   // Title right
-  const titulo = nf.tipo === 'servico' ? 'NOTA FISCAL DE SERVIÇO' : 'NOTA FISCAL DE PRODUTO';
+  const titulo = nf.tipo === 'servico' ? 'COMPROVANTE DE SERVIÇO' : 'COMPROVANTE DE PRODUTO';
   doc.setFontSize(11); doc.setFont('helvetica', 'bold');
   doc.text(titulo, mr, y + 6, { align: 'right' });
   doc.setFontSize(14);
   doc.text(`Nº ${nf.numero}`, mr, y + 14, { align: 'right' });
   doc.setFontSize(8); doc.setFont('helvetica', 'normal');
-  if (nf.serie) doc.text(`Série: ${nf.serie}`, mr, y + 19, { align: 'right' });
+  
   if (nf.emitida_em) doc.text(formatarDataCurta(nf.emitida_em), mr, y + 23, { align: 'right' });
   y += 28;
   doc.setDrawColor(180); doc.setLineWidth(0.5); doc.line(ml, y, mr, y); y += 6;
@@ -281,7 +281,7 @@ export async function gerarPdfNF(nf: NotaFiscalCompleta) {
   // Destinatário box
   doc.setDrawColor(200); doc.rect(ml, y - 2, mr - ml, nf.veiculo ? 22 : 16);
   doc.setFontSize(8); doc.setFont('helvetica', 'bold');
-  doc.text('DESTINATÁRIO', ml + 2, y + 2);
+  doc.text('CLIENTE', ml + 2, y + 2);
   doc.setFont('helvetica', 'normal');
   doc.text(`Nome: ${nf.destinatario_nome ?? '-'}`, ml + 2, y + 7);
   doc.text(`CPF/CNPJ: ${nf.destinatario_cpf_cnpj ?? '-'}`, 110, y + 7);
@@ -343,7 +343,7 @@ export async function gerarPdfNF(nf: NotaFiscalCompleta) {
   doc.setFontSize(8); doc.setFont('helvetica', 'normal');
   const tx = mr - 2;
   if (nf.desconto > 0) { doc.text(`Desconto: -${formatarMoeda(nf.desconto)}`, tx, y, { align: 'right' }); y += 5; }
-  if (nf.aliquota > 0) { doc.text(`Impostos (${nf.aliquota}%): ${formatarMoeda(nf.valor_imposto)}`, tx, y, { align: 'right' }); y += 5; }
+  if (nf.aliquota > 0) { doc.text(`Impostos estimados (${nf.aliquota}%) — já inclusos no valor`, tx, y, { align: 'right' }); y += 5; }
 
   // Total highlight
   doc.setFillColor(40, 40, 40);
@@ -355,9 +355,7 @@ export async function gerarPdfNF(nf: NotaFiscalCompleta) {
   // Footer
   doc.setDrawColor(180); doc.line(ml, y, mr, y); y += 5;
   doc.setFontSize(6.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(120);
-  doc.text(`Código de verificação: ${nf.id.slice(0, 8).toUpperCase()}`, ml, y); y += 3;
-  doc.text('Documento emitido eletronicamente pelo sistema Facilita Motors.', ml, y); y += 3;
-  doc.text('Este documento não substitui a nota fiscal eletrônica oficial (NF-e/NFS-e) emitida pela prefeitura/SEFAZ.', ml, y); y += 3;
+  doc.text('Comprovante gerado pelo sistema Facilita Motors. Este documento não substitui a nota fiscal eletrônica oficial (NF-e/NFS-e).', ml, y); y += 3;
   if (config.cnpj) doc.text(`Emitente: ${config.razao_social || config.nome_fantasia || ''} — CNPJ: ${formatarCNPJ(config.cnpj)}`, ml, y);
   doc.setTextColor(0);
 

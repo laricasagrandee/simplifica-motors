@@ -22,14 +22,14 @@ interface Props {
 
 export function NFList({ notas, loading, onVer, onImprimir }: Props) {
   if (loading) return <LoadingState />;
-  if (!notas.length) return <EmptyState icon={FileText} titulo="Nenhuma nota fiscal" descricao="Emita sua primeira nota fiscal." />;
+  if (!notas.length) return <EmptyState icon={FileText} titulo="Nenhum comprovante" descricao="Emita seu primeiro comprovante." />;
 
   return (
     <>
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead><tr className="border-b text-left text-muted-foreground">
-            <th className="p-2">Nº NF</th><th className="p-2">Tipo</th><th className="p-2">Cliente</th>
+            <th className="p-2">Nº</th><th className="p-2">Tipo</th><th className="p-2">Cliente</th>
             <th className="p-2 text-right">Valor</th><th className="p-2">Data</th><th className="p-2">Ações</th>
           </tr></thead>
           <tbody>{notas.map(nf => {
@@ -65,7 +65,7 @@ export function NFList({ notas, loading, onVer, onImprimir }: Props) {
           return (
             <div key={nf.id} className="rounded-lg border bg-card p-3 cursor-pointer" onClick={() => onVer(nf.id)}>
               <div className="flex justify-between items-center mb-1">
-                <span className="font-mono text-accent text-sm">NF {nf.numero}</span>
+                <span className="font-mono text-accent text-sm">Nº {nf.numero}</span>
                 <Badge className={nf.tipo === 'servico' ? 'bg-info-light text-info' : 'bg-accent-light text-accent'} variant="outline">
                   {nf.tipo === 'servico' ? 'Serviço' : 'Produto'}
                 </Badge>

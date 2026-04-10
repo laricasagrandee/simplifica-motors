@@ -10,7 +10,7 @@ interface Props {
 }
 
 export function NFPreviewHeader({ config, numero, tipo, serie, emitidaEm }: Props) {
-  const titulo = tipo === 'servico' ? 'NOTA FISCAL DE SERVIÇO' : 'NOTA FISCAL DE PRODUTO';
+  const titulo = tipo === 'servico' ? 'COMPROVANTE DE SERVIÇO' : 'COMPROVANTE DE PRODUTO';
 
   return (
     <div className="border-b-2 border-foreground/20 pb-4 mb-4">
@@ -45,7 +45,7 @@ export function NFPreviewHeader({ config, numero, tipo, serie, emitidaEm }: Prop
         <div className="text-right shrink-0">
           <p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider">{titulo}</p>
           <p className="font-mono font-bold text-2xl text-foreground">Nº {numero}</p>
-          {serie && <p className="text-xs text-muted-foreground">Série: {serie}</p>}
+          
           {emitidaEm && <p className="text-xs text-muted-foreground">{formatarDataCurta(emitidaEm)}</p>}
         </div>
       </div>

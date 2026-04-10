@@ -17,7 +17,7 @@ interface Props {
 export function NFPreview({ nf }: Props) {
   const tel = nf.destinatario_telefone?.replace(/\D/g, '');
   const msg = encodeURIComponent(
-    `Olá! Segue sua Nota Fiscal nº ${nf.numero} no valor de ${formatarMoeda(nf.valor)}. Facilita Motors.`
+    `Olá! Segue seu Comprovante nº ${nf.numero} no valor de ${formatarMoeda(nf.valor)}. Facilita Motors.`
   );
 
   const handlePDF = async () => {
