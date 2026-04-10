@@ -1,0 +1,1 @@
+CREATE POLICY "anon_select_plano_precos" ON public.plano_precos FOR SELECT TO anon USING (true);
