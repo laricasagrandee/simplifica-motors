@@ -1,35 +1,43 @@
 
 
-## Plan: Always Show Format Dialog + Preview Before Print/PDF
+## Plan: Minimal Change — POST Cliente via Local API
 
-### Changes (2 files)
+### What changes (1 file only)
 
-**1. `src/components/nf/PrintFormatDialog.tsx`**
-- Remove the `Checkbox` and "Lembrar minha escolha" (lines 42-51)
-- Remove `salvar` state; simplify `onSelect` to just pass the format (no `salvar` param)
-- Interface changes: `onSelect: (formato: 'a4' | 'cupom') => void`
+**`src/hooks/useClientes.ts`** — Edit only the `useCriarCliente` function (lines 121-136)
 
-**2. `src/components/nf/NFPreview.tsx`**
-- Remove saved format logic: remove `useConfiguracoes`, `useAtualizarConfiguracoes`, `savedFormat`
-- Change `handleAction`: always open the format dialog (never skip)
-- After format is chosen, instead of immediately executing print/PDF, show a preview step:
-  - Add state `chosenFormat: 'a4' | 'cupom' | null` to track the selected format
-  - When format is chosen, set `chosenFormat` and keep the action pending
-  - Render conditionally: if `chosenFormat === 'cupom'`, show `NFCupomPreview` inline (visible on screen, not hidden); if `'a4'`, show the existing A4 layout
-  - Show a confirmation bar below the preview with "Confirmar Impressão" / "Confirmar PDF" and "Voltar" buttons
-  - On confirm, execute the action (print or PDF)
-  - On "Voltar", reset to normal view (clear `chosenFormat` and `pendingAction`)
-- The normal view (no chosenFormat) shows the A4 preview as today with PDF/Imprimir/WhatsApp buttons
-- Update `handleFormatSelect` to remove `salvar` parameter handling
+Replace the Supabase insert with a `fetch()` POST to the local API:
 
-### Flow
-1. User clicks PDF or Imprimir
-2. Format dialog appears (every time)
-3. User picks A4 or Cupom
-4. Dialog closes, preview updates to show the chosen format
-5. Confirmation buttons appear below
-6. User clicks confirm → action executes
+```
+mutationFn: async (input) => {
+  const clean = sanitizeCliente(input);
+  const url = `http://localhost:3847/api/clientes`;
+  console.log('[CLIENTES] POST Request:', url, clean);
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(clean),
+  });
+  console.log('[CLIENTES] POST Response:', res.status);
+  if (!res.ok) {
+    const err = await res.text();
+    console.error('[CLIENTES] POST Error:', err);
+    throw new Error(err);
+  }
+  return await res.json();
+}
+```
 
-### No other files change
-Layout, responsiveness, and all other functionality remain the same.
+- Uses `getLocalServerPort()` from the existing device module (imported from `@/modules/device`) to avoid hardcoding, OR hardcodes `3847` since `runtime.ts` doesn't exist yet — whichever you prefer. The plan above hardcodes it for minimal scope.
+- Keeps `sanitizeCliente`, `registrarLog`, and `onSuccess` exactly as they are.
+- Does NOT touch listing, update, delete, or any other file.
+
+### What does NOT change
+- All other hooks and functions in `useClientes.ts`
+- No new files created
+- No architectural changes
+- Auth, license, other modules untouched
+
+### Purpose
+Validate that a POST from the frontend reaches the Rust backend and saves to SQLite. Once confirmed working, the remaining CRUD operations can be migrated incrementally.
 
