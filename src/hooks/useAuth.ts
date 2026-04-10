@@ -102,17 +102,14 @@ export function useLogin() {
 }
 
 export function useLogout() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
 
   const logout = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
       queryClient.clear();
-      navigate('/login');
+      await supabase.auth.signOut();
     } finally {
       setLoading(false);
     }

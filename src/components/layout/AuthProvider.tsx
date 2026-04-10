@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
 
       if (event === 'SIGNED_OUT') {
-        navigate('/login', { replace: true });
+        window.location.href = '/login';
         return;
       }
 
@@ -96,9 +96,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!loading && !usuario) {
-      navigate('/login', { replace: true });
+      window.location.href = '/login';
     }
-  }, [loading, usuario, navigate]);
+  }, [loading, usuario]);
 
   const { data: funcionario, isLoading: funcionarioLoading } = useUsuarioAtual(usuario?.id);
 
