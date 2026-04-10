@@ -1,7 +1,6 @@
 import { Building2, CheckCircle, AlertTriangle, XCircle, DollarSign } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import type { OficinaComStatus } from '@/hooks/useAdminOficinas';
-import { getAdminPrecos } from './AdminConfigPrecos';
 import { formatarMoeda } from '@/lib/formatters';
 
 interface Props {
@@ -12,8 +11,7 @@ export function AdminResumoCards({ oficinas }: Props) {
   const ativas = oficinas.filter((o) => o.status === 'ativo').length;
   const emAviso = oficinas.filter((o) => o.status === 'aviso').length;
   const bloqueadas = oficinas.filter((o) => o.status === 'bloqueado').length;
-  const precos = getAdminPrecos();
-  const receitaEstimada = ativas * precos.valorMensal;
+  const receitaEstimada = 0; // TODO: calcular a partir de plano_precos
 
   const cards = [
     { label: 'Total de Oficinas', value: String(oficinas.length), icon: Building2, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/30' },

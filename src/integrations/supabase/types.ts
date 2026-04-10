@@ -298,6 +298,8 @@ export type Database = {
           plano: string | null
           plano_ativo: boolean | null
           razao_social: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           taxa_cartao_credito: number | null
           taxa_cartao_credito_parcelado: number | null
           taxa_cartao_debito: number | null
@@ -320,6 +322,8 @@ export type Database = {
           plano?: string | null
           plano_ativo?: boolean | null
           razao_social?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           taxa_cartao_credito?: number | null
           taxa_cartao_credito_parcelado?: number | null
           taxa_cartao_debito?: number | null
@@ -342,6 +346,8 @@ export type Database = {
           plano?: string | null
           plano_ativo?: boolean | null
           razao_social?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           taxa_cartao_credito?: number | null
           taxa_cartao_credito_parcelado?: number | null
           taxa_cartao_debito?: number | null
@@ -1318,6 +1324,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      plano_precos: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string | null
+          criado_em: string | null
+          id: string
+          intervalo: string
+          max_funcionarios: number
+          slug: string
+          stripe_price_id: string | null
+          valor_centavos: number
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string | null
+          criado_em?: string | null
+          id?: string
+          intervalo: string
+          max_funcionarios?: number
+          slug: string
+          stripe_price_id?: string | null
+          valor_centavos?: number
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string | null
+          criado_em?: string | null
+          id?: string
+          intervalo?: string
+          max_funcionarios?: number
+          slug?: string
+          stripe_price_id?: string | null
+          valor_centavos?: number
+        }
+        Relationships: []
       }
       vendas_pdv: {
         Row: {
