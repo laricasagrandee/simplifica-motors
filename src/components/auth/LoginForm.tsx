@@ -24,7 +24,7 @@ export function LoginForm({
 }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  const { value: downloadUrl } = useAppSetting('download_desktop_url', 'https://drive.google.com/drive/folders/PLACEHOLDER');
+  const downloadUrl = 'https://drive.google.com/drive/folders/PLACEHOLDER';
 
   useEffect(() => {
     if (!lockedUntil) { setCountdown(0); return; }
