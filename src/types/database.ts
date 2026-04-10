@@ -229,6 +229,7 @@ export interface Configuracao {
   taxa_cartao_credito_parcelado: number | null;
   taxas_parcelamento: TaxasParcelamento | null;
   atualizado_em: string | null;
+  formato_impressao?: string | null;
 }
 
 export interface VendaPDV {

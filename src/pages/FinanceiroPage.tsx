@@ -94,7 +94,7 @@ function NFTab() {
     <div className="space-y-4">
       <div className="flex justify-end">
         <Button onClick={() => setFormOpen(true)} className="bg-accent text-accent-foreground min-h-[44px] gap-2">
-          <Plus className="h-4 w-4" />Emitir NF
+          <Plus className="h-4 w-4" />Novo Comprovante
         </Button>
       </div>
       <NFList

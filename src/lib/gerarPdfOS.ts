@@ -343,7 +343,7 @@ export async function gerarPdfNF(nf: NotaFiscalCompleta) {
   doc.setFontSize(8); doc.setFont('helvetica', 'normal');
   const tx = mr - 2;
   if (nf.desconto > 0) { doc.text(`Desconto: -${formatarMoeda(nf.desconto)}`, tx, y, { align: 'right' }); y += 5; }
-  if (nf.aliquota > 0) { doc.text(`Impostos estimados (${nf.aliquota}%) — já inclusos no valor`, tx, y, { align: 'right' }); y += 5; }
+  
 
   // Total highlight
   doc.setFillColor(40, 40, 40);
