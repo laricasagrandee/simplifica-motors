@@ -1,120 +1,182 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Settings, DollarSign, Percent, Calculator } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { DollarSign, Loader2, Save, ExternalLink } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { PLANO_LABELS, type PlanoSlug } from '@/lib/planos';
 
-const STORAGE_KEY = 'admin-precos-config';
-
-export interface PrecosConfig {
-  valorMensal: number;
-  oferecerAnual: boolean;
-  descontoAnual: number;
+interface PlanoPrecoRow {
+  id: string;
+  slug: string;
+  intervalo: string;
+  valor_centavos: number;
+  stripe_price_id: string | null;
+  ativo: boolean;
+  max_funcionarios: number;
 }
 
-const DEFAULTS: PrecosConfig = {
-  valorMensal: 19.9,
-  oferecerAnual: true,
-  descontoAnual: 10,
-};
-
-export function getAdminPrecos(): PrecosConfig {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return DEFAULTS;
+function formatBRL(centavos: number) {
+  return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 export function AdminConfigPrecos() {
-  const [config, setConfig] = useState<PrecosConfig>(DEFAULTS);
+  const queryClient = useQueryClient();
+  const [saving, setSaving] = useState(false);
+  const [edits, setEdits] = useState<Record<string, Partial<PlanoPrecoRow>>>({});
 
-  useEffect(() => {
-    setConfig(getAdminPrecos());
-  }, []);
+  const { data: precos, isLoading } = useQuery<PlanoPrecoRow[]>({
+    queryKey: ['admin-plano-precos'],
+    queryFn: async () => {
+      // Use service role via edge function or direct query
+      const { data, error } = await supabase
+        .from('plano_precos')
+        .select('*')
+        .order('valor_centavos');
+      if (error) throw error;
+      return (data ?? []) as unknown as PlanoPrecoRow[];
+    },
+  });
 
-  const valorAnualSemDesconto = config.valorMensal * 12;
-  const valorAnualComDesconto = valorAnualSemDesconto * (1 - config.descontoAnual / 100);
-
-  const handleSalvar = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-    toast({ title: 'Preços salvos com sucesso!' });
+  const getEdit = (id: string, field: keyof PlanoPrecoRow, original: PlanoPrecoRow) => {
+    return edits[id]?.[field] ?? original[field];
   };
 
-  const formatBRL = (v: number) =>
-    v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const setEdit = (id: string, field: keyof PlanoPrecoRow, value: unknown) => {
+    setEdits(prev => ({
+      ...prev,
+      [id]: { ...prev[id], [field]: value },
+    }));
+  };
+
+  const handleSalvar = async () => {
+    setSaving(true);
+    try {
+      for (const [id, changes] of Object.entries(edits)) {
+        if (Object.keys(changes).length === 0) continue;
+        const { error } = await supabase
+          .from('plano_precos')
+          .update({ ...changes, atualizado_em: new Date().toISOString() } as Record<string, unknown>)
+          .eq('id', id);
+        if (error) throw error;
+      }
+      setEdits({});
+      queryClient.invalidateQueries({ queryKey: ['admin-plano-precos'] });
+      queryClient.invalidateQueries({ queryKey: ['plano-precos'] });
+      toast({ title: 'Preços atualizados!' });
+    } catch (err: unknown) {
+      toast({ title: 'Erro ao salvar', description: (err as Error).message, variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (isLoading) return <Loader2 className="h-5 w-5 animate-spin text-blue-400 mx-auto" />;
+
+  const slugOrder: PlanoSlug[] = ['basico', 'profissional', 'premium'];
+  const grouped = (precos || []).reduce((acc, p) => {
+    if (!acc[p.slug]) acc[p.slug] = {};
+    acc[p.slug][p.intervalo] = p;
+    return acc;
+  }, {} as Record<string, Record<string, PlanoPrecoRow>>);
+
+  const hasEdits = Object.keys(edits).length > 0;
 
   return (
     <div className="space-y-5">
-        {/* Valor mensal */}
-        <div className="flex items-end gap-4">
-          <div className="flex-1">
-            <Label className="text-slate-300 flex items-center gap-1.5 mb-1.5">
-              <DollarSign className="h-3.5 w-3.5" /> Valor Mensal (R$)
-            </Label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              value={config.valorMensal}
-              onChange={(e) => setConfig((p) => ({ ...p, valorMensal: parseFloat(e.target.value) || 0 }))}
-              className="bg-slate-700 border-slate-600 text-white"
-            />
-          </div>
-        </div>
+      {slugOrder.map(slug => {
+        const label = PLANO_LABELS[slug] || slug;
+        const mensal = grouped[slug]?.mensal;
+        const anual = grouped[slug]?.anual;
 
-        {/* Toggle anual */}
-        <div className="flex items-center justify-between">
-          <Label className="text-slate-300">Oferecer plano anual com desconto</Label>
-          <Switch
-            checked={config.oferecerAnual}
-            onCheckedChange={(v) => setConfig((p) => ({ ...p, oferecerAnual: v }))}
-          />
-        </div>
+        return (
+          <div key={slug} className="space-y-3">
+            <h4 className="text-white font-bold capitalize flex items-center gap-2">
+              {label}
+              {mensal?.stripe_price_id ? (
+                <Badge className="bg-emerald-500/20 text-emerald-400 text-xs">Stripe OK</Badge>
+              ) : (
+                <Badge className="bg-amber-500/20 text-amber-400 text-xs">Sem Stripe</Badge>
+              )}
+            </h4>
 
-        {config.oferecerAnual && (
-          <div className="space-y-3 pl-1 border-l-2 border-blue-500/30 ml-1 py-1">
-            <div>
-              <Label className="text-slate-300 flex items-center gap-1.5 mb-1.5">
-                <Percent className="h-3.5 w-3.5" /> Desconto anual (%)
-              </Label>
-              <Input
-                type="number"
-                step="1"
-                min="0"
-                max="50"
-                value={config.descontoAnual}
-                onChange={(e) => setConfig((p) => ({ ...p, descontoAnual: parseFloat(e.target.value) || 0 }))}
-                className="bg-slate-700 border-slate-600 text-white w-32"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              {/* Mensal */}
+              {mensal && (
+                <div>
+                  <Label className="text-slate-400 text-xs">Mensal (centavos)</Label>
+                  <Input
+                    type="number"
+                    value={getEdit(mensal.id, 'valor_centavos', mensal) as number}
+                    onChange={e => setEdit(mensal.id, 'valor_centavos', parseInt(e.target.value) || 0)}
+                    className="bg-slate-700 border-slate-600 text-white text-sm"
+                  />
+                  <span className="text-xs text-slate-500">{formatBRL(getEdit(mensal.id, 'valor_centavos', mensal) as number)}/mês</span>
+                </div>
+              )}
+
+              {/* Anual */}
+              {anual && (
+                <div>
+                  <Label className="text-slate-400 text-xs">Anual (centavos)</Label>
+                  <Input
+                    type="number"
+                    value={getEdit(anual.id, 'valor_centavos', anual) as number}
+                    onChange={e => setEdit(anual.id, 'valor_centavos', parseInt(e.target.value) || 0)}
+                    className="bg-slate-700 border-slate-600 text-white text-sm"
+                  />
+                  <span className="text-xs text-slate-500">{formatBRL(getEdit(anual.id, 'valor_centavos', anual) as number)}/ano</span>
+                </div>
+              )}
             </div>
 
-            <div className="bg-slate-700/50 rounded-lg p-3 space-y-1">
-              <div className="flex items-center gap-1.5 text-sm text-slate-400">
-                <Calculator className="h-3.5 w-3.5" /> Preview do plano anual
+            {/* Stripe Price ID */}
+            {mensal && (
+              <div>
+                <Label className="text-slate-400 text-xs">Stripe Price ID (mensal)</Label>
+                <Input
+                  value={(getEdit(mensal.id, 'stripe_price_id', mensal) as string) || ''}
+                  onChange={e => setEdit(mensal.id, 'stripe_price_id', e.target.value || null)}
+                  placeholder="price_..."
+                  className="bg-slate-700 border-slate-600 text-white text-sm font-mono"
+                />
               </div>
-              <div className="text-sm text-slate-300">
-                {formatBRL(config.valorMensal)} × 12 = <span className="line-through text-slate-500">{formatBRL(valorAnualSemDesconto)}</span>
+            )}
+            {anual && (
+              <div>
+                <Label className="text-slate-400 text-xs">Stripe Price ID (anual)</Label>
+                <Input
+                  value={(getEdit(anual.id, 'stripe_price_id', anual) as string) || ''}
+                  onChange={e => setEdit(anual.id, 'stripe_price_id', e.target.value || null)}
+                  placeholder="price_..."
+                  className="bg-slate-700 border-slate-600 text-white text-sm font-mono"
+                />
               </div>
-              <div className="text-lg font-bold text-emerald-400">
-                {formatBRL(valorAnualComDesconto)}/ano
-              </div>
-              <div className="text-xs text-slate-500">
-                Equivale a {formatBRL(valorAnualComDesconto / 12)}/mês
-              </div>
-            </div>
+            )}
           </div>
-        )}
+        );
+      })}
 
-        <Button
-          onClick={handleSalvar}
-          className="bg-blue-600 hover:bg-blue-700 text-white w-full"
-        >
-          Salvar Preços
-        </Button>
-      </div>
+      <Button
+        onClick={handleSalvar}
+        disabled={!hasEdits || saving}
+        className="bg-blue-600 hover:bg-blue-700 text-white w-full"
+      >
+        {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+        Salvar Preços
+      </Button>
+
+      <a
+        href="https://dashboard.stripe.com/products"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300"
+      >
+        <ExternalLink className="h-3 w-3" /> Gerenciar produtos no Stripe Dashboard
+      </a>
+    </div>
   );
 }
