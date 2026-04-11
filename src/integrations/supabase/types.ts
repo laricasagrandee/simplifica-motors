@@ -293,7 +293,9 @@ export type Database = {
           formato_impressao: string | null
           id: string
           ie: string | null
+          local_ip: string | null
           logo_url: string | null
+          machine_name: string | null
           max_funcionarios: number | null
           nome_fantasia: string | null
           plano: string | null
@@ -318,7 +320,9 @@ export type Database = {
           formato_impressao?: string | null
           id?: string
           ie?: string | null
+          local_ip?: string | null
           logo_url?: string | null
+          machine_name?: string | null
           max_funcionarios?: number | null
           nome_fantasia?: string | null
           plano?: string | null
@@ -343,7 +347,9 @@ export type Database = {
           formato_impressao?: string | null
           id?: string
           ie?: string | null
+          local_ip?: string | null
           logo_url?: string | null
+          machine_name?: string | null
           max_funcionarios?: number | null
           nome_fantasia?: string | null
           plano?: string | null
