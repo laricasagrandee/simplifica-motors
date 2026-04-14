@@ -83,14 +83,17 @@ export function useAdminEditarOficina() {
   return useMutation({
     mutationFn: async (updates: Partial<Configuracao> & { id: string }) => {
       const { id, ...rest } = updates;
-      const { error } = await supabase.from('configuracoes').update(rest as any).eq('id', id);
+      const { data, error } = await supabase.functions.invoke('admin-update-license', {
+        body: { config_id: id, updates: rest },
+      });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-oficinas'] });
       toast({ title: 'Oficina atualizada!' });
     },
-    onError: () => toast({ title: 'Erro ao atualizar', variant: 'destructive' }),
+    onError: (e: any) => toast({ title: e?.message || 'Erro ao atualizar', variant: 'destructive' }),
   });
 }
 
@@ -120,13 +123,16 @@ export function useAdminBloquearOficina() {
       if (liberar) {
         updates.data_vencimento_plano = calcularProximoVencimento(dataVencimentoAnterior ?? null, 30);
       }
-      const { error } = await supabase.from('configuracoes').update(updates as any).eq('id', id);
+      const { data, error } = await supabase.functions.invoke('admin-update-license', {
+        body: { config_id: id, updates },
+      });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
     },
     onSuccess: (_, { liberar }) => {
       qc.invalidateQueries({ queryKey: ['admin-oficinas'] });
       toast({ title: liberar ? 'Oficina liberada!' : 'Oficina bloqueada!' });
     },
-    onError: () => toast({ title: 'Erro na operação', variant: 'destructive' }),
+    onError: (e: any) => toast({ title: e?.message || 'Erro na operação', variant: 'destructive' }),
   });
 }
